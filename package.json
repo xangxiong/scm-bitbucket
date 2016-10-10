@@ -1,0 +1,39 @@
+{
+  "name": "screwdriver-scm-bitbucket",
+  "version": "0.0.1",
+  "description": "This scm plugin extends the [scm-base-class](https://github.com/screwdriver-cd/scm-base), and provides methods to fetch and update data in Bitbucket.",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "eslint .",
+    "test": "jenkins-mocha --recursive"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:screwdriver-cd/scm-bitbucket.git"
+  },
+  "homepage": "https://github.com/screwdriver-cd/scm-bitbucket",
+  "bugs": "https://github.com/screwdriver-cd/scm-bitbucket/issues",
+  "keywords": [
+    "screwdriver",
+    "yahoo"
+  ],
+  "license": "BSD-3-Clause",
+  "author": "Tiffany Kyi <tiffanykyi@gmail.com>",
+  "contributors": [
+    "Dao Lam <daolam112@gmail.com>",
+    "Darren Matsumoto <aeneascorrupt@gmail.com>",
+    "Jeremiah Wuenschel <jeremiah.wuenschel@gmail.com>",
+    "Min Zhang <minzhang@andrew.cmu.edu>",
+    "Peter Peterson <jedipetey@gmail.com>",
+    "St. John Johnson <st.john.johnson@gmail.com",
+    "Tiffany Kyi <tiffanykyi@gmail.com>"
+  ],
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^3.2.2",
+    "eslint-config-screwdriver": "^2.0.0",
+    "eslint-plugin-import": "^1.12.0",
+    "jenkins-mocha": "^2.6.0"
+  },
+  "dependencies": {}
+}
