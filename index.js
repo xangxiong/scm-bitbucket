@@ -30,17 +30,31 @@ function getRepoInfo(checkoutUrl) {
     };
 }
 
+/**
+ * @method getScmUriParts
+ * @param  {String}     scmUri
+ * @return {Object}
+ */
+function getScmUriParts(scmUri) {
+    const scm = {};
+
+    [scm.hostname, scm.repoId, scm.branch] = scmUri.split(':');
+
+    return scm;
+}
+
 class BitbucketScm extends Scm {
     /**
      * Constructor for Scm
      * @method constructor
-     * @param  {Object}    config       Configuration
+     * @param  {Object}    config               Configuration
+     * @param  {String}    [config.fusebox]     Options for the circuit breaker
      * @return {ScmBase}
      */
     constructor(config) {
         super(config);
 
-        this.breaker = new Fusebox(request);
+        this.breaker = new Fusebox(request, config.fusebox);
     }
 
     /**
@@ -54,12 +68,10 @@ class BitbucketScm extends Scm {
     _parseUrl(config) {
         const repoInfo = getRepoInfo(config.checkoutUrl);
         const getBranchUrl = `${API_URL}/repositories/${repoInfo.username}/${repoInfo.repo}` +
-            `/refs/branches/${repoInfo.branch}`;
+            `/refs/branches/${repoInfo.branch}?access_key=${config.token}`;
         const options = {
             url: getBranchUrl,
-            method: 'GET',
-            login_type: 'oauth2',
-            oauth_access_token: config.token
+            method: 'GET'
         };
 
         return this.breaker.runCommand(options)
@@ -128,6 +140,107 @@ class BitbucketScm extends Scm {
         default:
             throw new Error('Only repository and pullrequest events are supported');
         }
+    }
+
+    /**
+     * Decorate the author based on the Bitbucket
+     * @method _decorateAuthor
+     * @param  {Object}        config          Configuration object
+     * @param  {Object}        config.token    Access token to authenticate with Bitbucket
+     * @param  {Object}        config.username Username to query more information for
+     * @return {Promise}
+     */
+    _decorateAuthor(config) {
+        const options = {
+            url: `${API_URL}/users/${config.username}?access_key=${config.token}`,
+            method: 'GET'
+        };
+
+        return this.breaker.runCommand(options)
+            .then((response) => {
+                const body = response.body;
+
+                if (response.statusCode !== 200) {
+                    throw new Error(`STATUS CODE ${response.statusCode}: ${body}`);
+                }
+
+                return {
+                    url: body.links.html.href,
+                    name: body.display_name,
+                    username: body.username,
+                    avatar: body.links.avatar.href
+                };
+            });
+    }
+
+   /**
+    * Decorate a given SCM URI with additional data to better display
+    * related information. If a branch suffix is not provided, it will default
+    * to the master branch
+    * @method decorateUrl
+    * @param  {Config}    config         Configuration object
+    * @param  {String}    config.scmUri  The SCM URI the commit belongs to
+    * @param  {String}    config.token   Service token to authenticate with Github
+    * @return {Object}
+    */
+    _decorateUrl(config) {
+        const scm = getScmUriParts(config.scmUri);
+        const options = {
+            url: `${API_URL}/repositories/${scm.repoId}?access_key=${config.token}`,
+            method: 'GET'
+        };
+
+        return this.breaker.runCommand(options)
+            .then((response) => {
+                const body = response.body;
+
+                if (response.statusCode !== 200) {
+                    throw new Error(`STATUS CODE ${response.statusCode}: ${body}`);
+                }
+
+                return {
+                    url: body.links.html.href,
+                    name: body.full_name,
+                    branch: scm.branch
+                };
+            });
+    }
+
+    /**
+     * Decorate the commit based on the repository
+     * @method _decorateCommit
+     * @param  {Object}        config           Configuration object
+     * @param  {Object}        config.sha       Commit sha to decorate
+     * @param  {Object}        config.scmUri    SCM URI the commit belongs to
+     * @param  {Object}        config.token     Service token to authenticate with Github
+     * @return {Promise}
+     */
+    _decorateCommit(config) {
+        const scm = getScmUriParts(config.scmUri);
+        const options = {
+            url: `${API_URL}/repositories/${scm.repoId}` +
+                `/commit/${config.sha}?access_key=${config.token}`,
+            method: 'GET'
+        };
+
+        return this.breaker.runCommand(options)
+            .then((response) => {
+                const body = response.body;
+
+                if (response.statusCode !== 200) {
+                    throw new Error(`STATUS CODE ${response.statusCode}: ${body}`);
+                }
+
+                // eslint-disable-next-line
+                return this._decorateAuthor({
+                    username: body.author.user.username,
+                    token: config.token
+                }).then(author => ({
+                    url: body.links.html.href,
+                    message: body.message,
+                    author
+                }));
+            });
     }
 
     /**
