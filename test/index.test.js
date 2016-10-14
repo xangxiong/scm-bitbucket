@@ -10,17 +10,10 @@ const testPayloadPush = require('./data/repo.push.json');
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 
-/**
- * Stub for circuit-fuses wrapper
- * @method BreakerMock
- */
-function BreakerMock() {}
-
 describe('index', () => {
     let BitbucketScm;
     let scm;
     let requestMock;
-    let breakRunMock;
 
     before(() => {
         mockery.enable({
@@ -31,32 +24,15 @@ describe('index', () => {
 
     beforeEach(() => {
         requestMock = sinon.stub();
-        breakRunMock = {
-            runCommand: sinon.stub(),
-            stats: sinon.stub().returns({
-                requests: {
-                    total: 1,
-                    timeouts: 2,
-                    success: 3,
-                    failure: 4,
-                    concurrent: 5,
-                    averageTime: 6
-                },
-                breaker: {
-                    isClosed: false
-                }
-            })
-        };
-
-        BreakerMock.prototype = breakRunMock;
-        mockery.registerMock('circuit-fuses', BreakerMock);
         mockery.registerMock('request', requestMock);
 
         /* eslint-disable global-require */
         BitbucketScm = require('../index');
         /* eslint-enable global-require */
 
-        scm = new BitbucketScm();
+        scm = new BitbucketScm({
+            fusebox: { retry: { minTimeout: 1 } }
+        });
     });
 
     afterEach(() => {
@@ -88,7 +64,7 @@ describe('index', () => {
                     uuid: '{de7d7695-1196-46a1-b87d-371b7b2945ab}'
                 }
             };
-            breakRunMock.runCommand.resolves(fakeResponse);
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
         });
 
         it('resolves to the correct parsed url for ssh', () => {
@@ -105,7 +81,7 @@ describe('index', () => {
                 checkoutUrl: 'git@bitbucket.org:batman/test.git#master',
                 token
             }).then((parsed) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
+                assert.calledWith(requestMock, expectedOptions);
                 assert.equal(parsed, expected);
             });
         });
@@ -124,7 +100,7 @@ describe('index', () => {
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
                 token: 'myAccessToken'
             }).then((parsed) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
+                assert.calledWith(requestMock, expectedOptions);
                 assert.equal(parsed, expected);
             });
         });
@@ -138,17 +114,17 @@ describe('index', () => {
                 oauth_access_token: 'myAccessToken'
             };
 
-            breakRunMock.runCommand.rejects(err);
+            requestMock.yieldsAsync(err);
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
                 token: 'myAccessToken'
             })
-            .then(() => assert.fail('Should not get here'))
-            .catch((error) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
-                assert.deepEqual(error, err);
-            });
+                .then(() => assert.fail('Should not get here'))
+                .catch((error) => {
+                    assert.calledWith(requestMock, expectedOptions);
+                    assert.deepEqual(error, err);
+                });
         });
 
         it('rejects if status code is not 200', () => {
@@ -169,17 +145,17 @@ describe('index', () => {
                 }
             };
 
-            breakRunMock.runCommand.resolves(fakeResponse);
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
                 token: 'myAccessToken'
             })
-            .then(() => assert.fail('Should not get here'))
-            .catch((error) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
-                assert.match(error.message, 'STATUS CODE 404');
-            });
+                .then(() => assert.fail('Should not get here'))
+                .catch((error) => {
+                    assert.calledWith(requestMock, expectedOptions);
+                    assert.match(error.message, 'STATUS CODE 404');
+                });
         });
     });
 
@@ -239,32 +215,38 @@ describe('index', () => {
                 .then(result => assert.deepEqual(result, expected));
         });
 
-        it('throws error if events are not supported', () => {
+        it('throws error if events are not supported: repoFork', () => {
             const repoFork = {
                 'X-Event-Key': 'repo:fork'
             };
-            const prComment = {
-                'X-Event-Key': 'pullrequest:comment_created'
-            };
-            const issueCreated = {
-                'X-Event-Key': 'issue:created'
-            };
 
-            scm.parseHook(repoFork, {})
+            return scm.parseHook(repoFork, {})
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.deepEqual(error.message,
                         'Only push event is supported for repository');
                 });
+        });
 
-            scm.parseHook(prComment, {})
+        it('throws error if events are not supported: prComment', () => {
+            const prComment = {
+                'X-Event-Key': 'pullrequest:comment_created'
+            };
+
+            return scm.parseHook(prComment, {})
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.deepEqual(error.message,
                         'Only created and fullfilled events are supported for pullrequest');
                 });
+        });
 
-            scm.parseHook(issueCreated, {})
+        it('throws error if events are not supported: issueCreated', () => {
+            const issueCreated = {
+                'X-Event-Key': 'issue:created'
+            };
+
+            return scm.parseHook(issueCreated, {})
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.deepEqual(error.message,
@@ -277,15 +259,15 @@ describe('index', () => {
         it('returns the correct stats', () => {
             assert.deepEqual(scm.stats(), {
                 requests: {
-                    total: 1,
-                    timeouts: 2,
-                    success: 3,
-                    failure: 4,
-                    concurrent: 5,
-                    averageTime: 6
+                    total: 0,
+                    timeouts: 0,
+                    success: 0,
+                    failure: 0,
+                    concurrent: 0,
+                    averageTime: 0
                 },
                 breaker: {
-                    isClosed: false
+                    isClosed: true
                 }
             });
         });
