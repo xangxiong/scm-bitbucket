@@ -8,6 +8,18 @@
 ```bash
 npm install screwdriver-scm-bitbucket
 ```
+#### parseUrl
+Required parameters:
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config             | Object | Configuration Object |
+| config.checkoutUrl | String | Checkout url for a repo to parse |
+| config.token  | String | Access token for scm |
+
+#### Output: Promise
+1. Resolves to an scm uri for the repository. Ex: `bitbucket.org:{1234}:branchName`, where `{1234}` is repository's uuid.
+2. Rejects if not able to parse url
 
 ### parseHook
 Required parameters:
@@ -17,8 +29,8 @@ Required parameters:
 | headers        | Object | Request header |
 | payload        | Object | Request payload |
 
-#### Expected Outcome
-An object with the following fields:
+#### Output: Promise
+1. Resolves to an object with the following fields:
 ```js
 {
     type: 'pr',         // can be 'pr' or 'repo'
@@ -31,6 +43,7 @@ An object with the following fields:
     prRef: 'refs/pull-requests/3/from'
 }
 ```
+2. Rejects if not able to parse webhook payload
 
 ## Testing
 
