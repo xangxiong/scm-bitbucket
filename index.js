@@ -14,6 +14,13 @@ const MATCH_COMPONENT_HOSTNAME = 1;
 const MATCH_COMPONENT_USER = 2;
 const MATCH_COMPONENT_REPO = 3;
 const MATCH_COMPONENT_BRANCH = 4;
+const STATE_MAP = {
+    SUCCESS: 'SUCCESSFUL',
+    RUNNING: 'INPROGRESS',
+    QUEUED: 'INPROGRESS',
+    FAILURE: 'FAILED',
+    ABORTED: 'STOPPED'
+};
 
 /**
  * Get repo information
@@ -183,8 +190,8 @@ class BitbucketScm extends Scm {
     * to the master branch
     * @method decorateUrl
     * @param  {Config}    config         Configuration object
-    * @param  {String}    config.scmUri  The SCM URI the commit belongs to
-    * @param  {String}    config.token   Service token to authenticate with Github
+    * @param  {String}    config.scmUri  The scmUri
+    * @param  {String}    config.token   Service token to authenticate with Bitbucket
     * @return {Object}                   Resolves to a decoratedUrl with url, name, and branch
     */
     _decorateUrl(config) {
@@ -215,8 +222,8 @@ class BitbucketScm extends Scm {
      * @method _decorateCommit
      * @param  {Object}     config           Configuration object
      * @param  {Object}     config.sha       Commit sha to decorate
-     * @param  {Object}     config.scmUri    SCM URI the commit belongs to
-     * @param  {Object}     config.token     Service token to authenticate with Github
+     * @param  {Object}     config.scmUri    The scmUri that the commit belongs to
+     * @param  {Object}     config.token     Service token to authenticate with Bitbucket
      * @return {Promise}                     Resolves to a decorated object with url, message, and author
      */
     _decorateCommit(config) {
@@ -250,7 +257,7 @@ class BitbucketScm extends Scm {
      * Get a commit sha for a specific repo#branch
      * @method getCommitSha
      * @param  {Object}   config            Configuration
-     * @param  {String}   config.scmUri     The scmUri to get commit sha of
+     * @param  {String}   config.scmUri     The scmUri
      * @param  {String}   config.token      The token used to authenticate to the SCM
      * @return {Promise}                    Resolves to the sha for the scmUri
      */
@@ -277,7 +284,7 @@ class BitbucketScm extends Scm {
      * Fetch content of a file from Bitbucket
      * @method getFile
      * @param  {Object}   config              Configuration
-     * @param  {String}   config.scmUri       The scmUri to get permissions on
+     * @param  {String}   config.scmUri       The scmUri
      * @param  {String}   config.path         The file in the repo to fetch
      * @param  {String}   config.token        The token used to authenticate to the SCM
      * @param  {String}   config.ref          The reference to the SCM, either branch or sha
@@ -285,8 +292,10 @@ class BitbucketScm extends Scm {
      */
     _getFile(config) {
         const scm = getScmUriParts(config.scmUri);
-        const fileUrl = `${API_URL_V1}/repositories/${scm.repoId}` +
-            `/src/${config.ref}/${config.path}?access_key=${config.token}`;
+        const urlRoot = `${API_URL_V1}/repositories/${scm.repoId}`;
+        const urlSuffix = `src/${config.ref}/${config.path}`;
+        const urlParameters = `access_key=${config.token}`;
+        const fileUrl = `${urlRoot}/${urlSuffix}?${urlParameters}`;
         const options = {
             url: fileUrl,
             method: 'GET'
@@ -303,13 +312,13 @@ class BitbucketScm extends Scm {
     }
 
     /**
-    * Get a user's permissions on a repository
-    * @method _getPermissions
-    * @param  {Object}   config            Configuration
-    * @param  {String}   config.scmUri     The scmUri to get permissions on
-    * @param  {String}   config.token      The token used to authenticate to the SCM
-    * @return {Promise}                    Resolves to permissions object with admin, push, pull
-    */
+     * Get a user's permissions on a repository
+     * @method _getPermissions
+     * @param  {Object}   config            Configuration
+     * @param  {String}   config.scmUri     The scmUri
+     * @param  {String}   config.token      The token used to authenticate to the SCM
+     * @return {Promise}                    Resolves to permissions object with admin, push, pull
+     */
     _getPermissions(config) {
         const scm = getScmUriParts(config.scmUri);
         const getPerm = (repoId, desiredAccess, token) => {
@@ -349,10 +358,49 @@ class BitbucketScm extends Scm {
     }
 
     /**
-    * Retrieve stats for the scm
-    * @method stats
-    * @param  {Response}    Object          Object containing stats for the scm
-    */
+     * Update the commit status for a given repo and sha
+     * @method updateCommitStatus
+     * @param  {Object}   config              Configuration
+     * @param  {String}   config.scmUri       The scmUri
+     * @param  {String}   config.sha          The sha to apply the status to
+     * @param  {String}   config.buildStatus  The screwdriver build status to translate into scm commit status
+     * @param  {String}   config.token        The token used to authenticate to the SCM
+     * @param  {String}   config.url          Target Url of this commit status
+     * @param  {String}   [config.jobName]    Optional name of the job that finished
+     * @return {Promise}
+     */
+    _updateCommitStatus(config) {
+        const scm = getScmUriParts(config.scmUri);
+        const options = {
+            url: `${REPO_URL}/${scm.repoId}/commit/${config.sha}/statuses/build`,
+            method: 'POST',
+            json: true,
+            body: {
+                url: config.url,
+                state: STATE_MAP[config.buildStatus],
+                key: config.sha,
+                description: config.jobName ? `Screwdriver/${config.jobName}` : 'Screwdriver'
+            },
+            auth: {
+                bearer: decodeURIComponent(config.token)
+            }
+        };
+
+        return this.breaker.runCommand(options)
+            .then((response) => {
+                if (response.statusCode !== 200) {
+                    throw new Error(`STATUS CODE ${response.statusCode}: ${response.body}`);
+                }
+
+                return response;
+            });
+    }
+
+    /**
+     * Retrieve stats for the scm
+     * @method stats
+     * @param  {Response}    Object          Object containing stats for the scm
+     */
     stats() {
         return this.breaker.stats();
     }

@@ -178,6 +178,25 @@ The contents of the file at `path` in the repository
 1. Resolve with the contents of `path`
 2. Reject if the `path` cannot be downloaded, decoded, or is not a file
 
+### updateCommitStatus
+The parameters required are:
+
+| Parameter        | Type  | Required | Description |
+| :-------------   | :---- | :------- | :-------------|
+| config        | Object | true | Configuration Object |
+| config.scmUri | String | true | The scm uri (ex: `bitbucket.org:batman/{1234}:branchName`) |
+| config.token | String | true | Access token for scm |
+| config.sha | String | true | The scm sha to update a status for |
+| config.buildStatus | String | true | The screwdriver build status to translate into scm commit status |
+| config.url | String | false | The target url for setting up details |
+
+#### Expected Outcome
+Update the commit status for a given repository and sha.
+
+#### Expected Promise Response
+1. Resolves to response when the commit status was updated
+2. Reject if the commit status fails to update
+
 ## Testing
 
 ```bash

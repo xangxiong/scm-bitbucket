@@ -835,6 +835,94 @@ describe('index', () => {
         });
     });
 
+    describe('updateCommitStatus', () => {
+        let config;
+        let apiUrl;
+        let fakeResponse;
+        let expectedOptions;
+
+        beforeEach(() => {
+            config = {
+                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                sha: '40171b6785277ed1478ee2bc8587064e5a7d9fda',
+                buildStatus: 'SUCCESS',
+                token: 'sK6-nvoU%3D',
+                url: 'https://cd.screwdriver.cd/pipelines/1234',
+                jobName: 'main'
+            };
+            apiUrl = `${API_URL_V2}/repositories/batman/{1234}/commit/${config.sha}/statuses/build`;
+            fakeResponse = {
+                statusCode: 200
+            };
+            expectedOptions = {
+                url: apiUrl,
+                method: 'POST',
+                json: true,
+                body: {
+                    url: config.url,
+                    state: 'SUCCESSFUL',
+                    key: config.sha,
+                    description: 'Screwdriver/main'
+                },
+                auth: {
+                    bearer: 'sK6-nvoU='     // Decoded access token
+                }
+            };
+            requestMock.yieldsAsync(null, fakeResponse);
+        });
+
+        it('successfully update status', () =>
+            scm.updateCommitStatus(config).then(() => {
+                assert.calledWith(requestMock, expectedOptions);
+            })
+        );
+
+        it('successfully update status with correct values', () => {
+            config.buildStatus = 'ABORTED';
+            delete config.jobName;
+
+            expectedOptions.body.state = 'STOPPED';
+            expectedOptions.body.description = 'Screwdriver';
+
+            return scm.updateCommitStatus(config).then(() => {
+                assert.calledWith(requestMock, expectedOptions);
+            });
+        });
+
+        it('rejects if status code is not 200', () => {
+            fakeResponse = {
+                statusCode: 401,
+                body: {
+                    error: {
+                        message: 'Access token expired'
+                    }
+                }
+            };
+
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.updateCommitStatus(config).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.match(error.message, 'STATUS CODE 401');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const err = new Error('Bitbucket API error');
+
+            requestMock.yieldsAsync(err);
+
+            return scm.updateCommitStatus(config).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.equal(error, err);
+            });
+        });
+    });
+
     describe('stats', () => {
         it('returns the correct stats', () => {
             assert.deepEqual(scm.stats(), {
