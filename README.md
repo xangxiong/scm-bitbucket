@@ -18,7 +18,7 @@ Required parameters:
 | config.token  | String | Access token for scm |
 
 #### Output: Promise
-1. Resolves to an scm uri for the repository. Ex: `bitbucket.org:{1234}:branchName`, where `{1234}` is repository's uuid.
+1. Resolves to an scm uri for the repository. Ex: `bitbucket.org:batman/{1234}:branchName`, where `batman` is the repository's owner and `{1234}` is repository's uuid.
 2. Rejects if not able to parse url
 
 ### parseHook
@@ -44,6 +44,82 @@ Required parameters:
 }
 ```
 2. Rejects if not able to parse webhook payload
+
+### decorateUrl
+Required parameters:
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.scmUri | String | Scm uri (ex: `bitbucket.org:batman/{1234}:branchName`) |
+| config.token  | String | Access token for scm |
+
+#### Expected Outcome
+Decorated url in the form of:
+```js
+{
+    url: 'https://bitbucket.org/batman/test.git',
+    name: 'batman/test',
+    branch: 'mybranch'
+}
+```
+
+#### Expected Promise response
+1. Resolve with a decorated url object for the repository
+2. Reject if not able to get decorate url
+
+### decorateCommit
+Required parameters:
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.sha     | String | Commit sha to decorate |
+| config.scmUri        | String | Scm uri (ex: `bitbucket.org:1234:branchName`) |
+| config.token | String | Access token for scm |
+
+#### Expected Outcome
+Decorated commit in the form of:
+```js
+{
+    url: 'https://bitbucket.org/screwdriver-cd/scm-base/commit/5c3b2cc64ee4bdab73e44c394ad1f92208441411',
+    message: 'Use screwdriver to publish',
+    author: {
+        url: 'https://bitbucket.org/d2lam',
+        name: 'Dao Lam',
+        username: 'd2lam',
+        avatar: 'https://bitbucket.org/account/d2lam/avatar/32/'
+    }
+}
+```
+
+#### Expected Promise response
+1. Resolve with a decorate commit object for the repository
+2. Reject if not able to decorate commit
+
+### decorateAuthor
+Required parameters:
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.username     | String | Author to decorate |
+| config.token | String | Access token for scm |
+
+#### Expected Outcome
+Decorated author in the form of:
+```js
+{
+    url: 'https://bitbucket.org/d2lam',
+    name: 'Dao Lam',
+    username: 'd2lam',
+    avatar: 'https://bitbucket.org/account/d2lam/avatar/32/'
+}
+```
+
+#### Expected Promise response
+1. Resolve with a decorate author object for the repository
+2. Reject if not able to decorate author
 
 ## Testing
 

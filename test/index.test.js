@@ -6,21 +6,16 @@ const sinon = require('sinon');
 const testPayloadOpen = require('./data/pr.opened.json');
 const testPayloadClose = require('./data/pr.closed.json');
 const testPayloadPush = require('./data/repo.push.json');
+const token = 'myAccessToken';
+const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
-
-/**
- * Stub for circuit-fuses wrapper
- * @method BreakerMock
- */
-function BreakerMock() {}
 
 describe('index', () => {
     let BitbucketScm;
     let scm;
     let requestMock;
-    let breakRunMock;
 
     before(() => {
         mockery.enable({
@@ -31,32 +26,15 @@ describe('index', () => {
 
     beforeEach(() => {
         requestMock = sinon.stub();
-        breakRunMock = {
-            runCommand: sinon.stub(),
-            stats: sinon.stub().returns({
-                requests: {
-                    total: 1,
-                    timeouts: 2,
-                    success: 3,
-                    failure: 4,
-                    concurrent: 5,
-                    averageTime: 6
-                },
-                breaker: {
-                    isClosed: false
-                }
-            })
-        };
-
-        BreakerMock.prototype = breakRunMock;
-        mockery.registerMock('circuit-fuses', BreakerMock);
         mockery.registerMock('request', requestMock);
 
         /* eslint-disable global-require */
         BitbucketScm = require('../index');
         /* eslint-enable global-require */
 
-        scm = new BitbucketScm();
+        scm = new BitbucketScm({
+            fusebox: { retry: { minTimeout: 1 } }
+        });
     });
 
     afterEach(() => {
@@ -69,9 +47,9 @@ describe('index', () => {
     });
 
     describe('parseUrl', () => {
-        const apiUrl = 'https://api.bitbucket.org/2.0/repositories/batman/test/refs/branches/';
-        const token = 'myAccessToken';
+        const apiUrl = `${API_URL_V2}/repositories/batman/test/refs/branches`;
         let fakeResponse;
+        let expectedOptions;
 
         beforeEach(() => {
             fakeResponse = {
@@ -88,24 +66,27 @@ describe('index', () => {
                     uuid: '{de7d7695-1196-46a1-b87d-371b7b2945ab}'
                 }
             };
-            breakRunMock.runCommand.resolves(fakeResponse);
+            expectedOptions = {
+                url: `${apiUrl}/mynewbranch?access_key=myAccessToken`,
+                method: 'GET'
+            };
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
         });
 
         it('resolves to the correct parsed url for ssh', () => {
             const expected =
                 'bitbucket.org:batman/{de7d7695-1196-46a1-b87d-371b7b2945ab}:master';
-            const expectedOptions = {
-                url: `${apiUrl}master`,
-                method: 'GET',
-                login_type: 'oauth2',
-                oauth_access_token: token
+
+            expectedOptions = {
+                url: `${apiUrl}/master?access_key=myAccessToken`,
+                method: 'GET'
             };
 
             return scm.parseUrl({
                 checkoutUrl: 'git@bitbucket.org:batman/test.git#master',
                 token
             }).then((parsed) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
+                assert.calledWith(requestMock, expectedOptions);
                 assert.equal(parsed, expected);
             });
         });
@@ -113,52 +94,33 @@ describe('index', () => {
         it('resolves to the correct parsed url for https', () => {
             const expected =
                 'bitbucket.org:batman/{de7d7695-1196-46a1-b87d-371b7b2945ab}:mynewbranch';
-            const expectedOptions = {
-                url: `${apiUrl}mynewbranch`,
-                method: 'GET',
-                login_type: 'oauth2',
-                oauth_access_token: 'myAccessToken'
-            };
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
                 token: 'myAccessToken'
             }).then((parsed) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
+                assert.calledWith(requestMock, expectedOptions);
                 assert.equal(parsed, expected);
             });
         });
 
         it('rejects if request fails', () => {
             const err = new Error('Bitbucket API error');
-            const expectedOptions = {
-                url: `${apiUrl}mynewbranch`,
-                method: 'GET',
-                login_type: 'oauth2',
-                oauth_access_token: 'myAccessToken'
-            };
 
-            breakRunMock.runCommand.rejects(err);
+            requestMock.yieldsAsync(err);
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
                 token: 'myAccessToken'
             })
-            .then(() => assert.fail('Should not get here'))
-            .catch((error) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
-                assert.deepEqual(error, err);
-            });
+                .then(() => assert.fail('Should not get here'))
+                .catch((error) => {
+                    assert.calledWith(requestMock, expectedOptions);
+                    assert.deepEqual(error, err);
+                });
         });
 
         it('rejects if status code is not 200', () => {
-            const expectedOptions = {
-                url: `${apiUrl}mynewbranch`,
-                method: 'GET',
-                login_type: 'oauth2',
-                oauth_access_token: 'myAccessToken'
-            };
-
             fakeResponse = {
                 statusCode: 404,
                 body: {
@@ -169,17 +131,17 @@ describe('index', () => {
                 }
             };
 
-            breakRunMock.runCommand.resolves(fakeResponse);
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
                 token: 'myAccessToken'
             })
-            .then(() => assert.fail('Should not get here'))
-            .catch((error) => {
-                assert.calledWith(breakRunMock.runCommand, expectedOptions);
-                assert.match(error.message, 'STATUS CODE 404');
-            });
+                .then(() => assert.fail('Should not get here'))
+                .catch((error) => {
+                    assert.calledWith(requestMock, expectedOptions);
+                    assert.match(error.message, 'STATUS CODE 404');
+                });
         });
     });
 
@@ -239,32 +201,38 @@ describe('index', () => {
                 .then(result => assert.deepEqual(result, expected));
         });
 
-        it('throws error if events are not supported', () => {
+        it('throws error if events are not supported: repoFork', () => {
             const repoFork = {
                 'X-Event-Key': 'repo:fork'
             };
-            const prComment = {
-                'X-Event-Key': 'pullrequest:comment_created'
-            };
-            const issueCreated = {
-                'X-Event-Key': 'issue:created'
-            };
 
-            scm.parseHook(repoFork, {})
+            return scm.parseHook(repoFork, {})
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.deepEqual(error.message,
                         'Only push event is supported for repository');
                 });
+        });
 
-            scm.parseHook(prComment, {})
+        it('throws error if events are not supported: prComment', () => {
+            const prComment = {
+                'X-Event-Key': 'pullrequest:comment_created'
+            };
+
+            return scm.parseHook(prComment, {})
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.deepEqual(error.message,
                         'Only created and fullfilled events are supported for pullrequest');
                 });
+        });
 
-            scm.parseHook(issueCreated, {})
+        it('throws error if events are not supported: issueCreated', () => {
+            const issueCreated = {
+                'X-Event-Key': 'issue:created'
+            };
+
+            return scm.parseHook(issueCreated, {})
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.deepEqual(error.message,
@@ -273,19 +241,312 @@ describe('index', () => {
         });
     });
 
+    describe('decorateAuthor', () => {
+        const apiUrl = `${API_URL_V2}/users/batman?access_key=${token}`;
+        const expectedOptions = {
+            url: apiUrl,
+            method: 'GET'
+        };
+        let fakeResponse;
+
+        beforeEach(() => {
+            fakeResponse = {
+                statusCode: 200,
+                body: {
+                    username: 'batman',
+                    display_name: 'Batman',
+                    uuid: '{4f1a9b7f-586e-4e80-b9eb-a7589b4a165f}',
+                    links: {
+                        html: {
+                            href: 'https://bitbucket.org/batman/'
+                        },
+                        avatar: {
+                            href: 'https://bitbucket.org/account/batman/avatar/32/'
+                        }
+                    }
+                }
+            };
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+        });
+
+        it('resolves to correct decorated author', () => {
+            const expected = {
+                url: 'https://bitbucket.org/batman/',
+                name: 'Batman',
+                username: 'batman',
+                avatar: 'https://bitbucket.org/account/batman/avatar/32/'
+            };
+
+            return scm.decorateAuthor({
+                username: 'batman',
+                token
+            }).then((decorated) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.deepEqual(decorated, expected);
+            });
+        });
+
+        it('rejects if status code is not 200', () => {
+            fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
+
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.decorateAuthor({
+                username: 'batman',
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.match(error.message, 'STATUS CODE 404');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const err = new Error('Bitbucket API error');
+
+            requestMock.yieldsAsync(err);
+
+            return scm.decorateAuthor({
+                username: 'batman',
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.equal(error, err);
+            });
+        });
+    });
+
+    describe('decorateUrl', () => {
+        const apiUrl = `${API_URL_V2}/repositories/batman/{1234}?access_key=${token}`;
+        const selfLink = 'https://bitbucket.org/d2lam2/test';
+        const repoOptions = {
+            url: apiUrl,
+            method: 'GET'
+        };
+        let fakeResponse;
+        let expectedOptions;
+
+        beforeEach(() => {
+            fakeResponse = {
+                statusCode: 200,
+                body: {
+                    full_name: 'batman/mybranch',
+                    links: {
+                        html: {
+                            href: selfLink
+                        }
+                    }
+                }
+            };
+            expectedOptions = {
+                url: apiUrl,
+                method: 'GET'
+            };
+            requestMock.withArgs(repoOptions)
+                .yieldsAsync(null, fakeResponse, fakeResponse.body);
+        });
+
+        it('resolves to correct decorated url object', () => {
+            const expected = {
+                url: selfLink,
+                name: 'batman/mybranch',
+                branch: 'mybranch'
+            };
+
+            return scm.decorateUrl({
+                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                token
+            }).then((decorated) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.deepEqual(decorated, expected);
+            });
+        });
+
+        it('rejects if status code is not 200', () => {
+            fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
+
+            requestMock.withArgs(repoOptions).yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.decorateUrl({
+                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.match(error.message, 'STATUS CODE 404');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const err = new Error('Bitbucket API error');
+
+            requestMock.withArgs(repoOptions).yieldsAsync(err);
+
+            return scm.decorateUrl({
+                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.called(requestMock);
+                assert.equal(error, err);
+            });
+        });
+    });
+
+    describe('decorateCommit', () => {
+        const repoUrl =
+            `${API_URL_V2}/repositories/batman/{1234}/commit/40171b678527?access_key=${token}`;
+        const authorUrl = `${API_URL_V2}/users/batman?access_key=${token}`;
+        const selfLink = 'https://bitbucket.org/batman/test/commits/40171b678527';
+        const repoOptions = {
+            url: repoUrl,
+            method: 'GET'
+        };
+        const authorOptions = {
+            url: authorUrl,
+            method: 'GET'
+        };
+        let fakeResponse;
+        let fakeAuthorResponse;
+
+        beforeEach(() => {
+            fakeResponse = {
+                statusCode: 200,
+                body: {
+                    message: 'testing',
+                    links: {
+                        html: {
+                            href: selfLink
+                        }
+                    },
+                    author: {
+                        user: {
+                            username: 'batman'
+                        }
+                    }
+                }
+            };
+            fakeAuthorResponse = {
+                statusCode: 200,
+                body: {
+                    username: 'batman',
+                    display_name: 'Batman',
+                    uuid: '{4f1a9b7f-586e-4e80-b9eb-a7589b4a165f}',
+                    links: {
+                        html: {
+                            href: 'https://bitbucket.org/batman/'
+                        },
+                        avatar: {
+                            href: 'https://bitbucket.org/account/batman/avatar/32/'
+                        }
+                    }
+                }
+            };
+            requestMock.withArgs(repoOptions)
+                .yieldsAsync(null, fakeResponse, fakeResponse.body);
+            requestMock.withArgs(authorOptions)
+                .yieldsAsync(null, fakeAuthorResponse, fakeAuthorResponse.body);
+        });
+
+        it('resolves to correct decorated object', () => {
+            const expected = {
+                url: selfLink,
+                message: 'testing',
+                author: {
+                    url: 'https://bitbucket.org/batman/',
+                    name: 'Batman',
+                    username: 'batman',
+                    avatar: 'https://bitbucket.org/account/batman/avatar/32/'
+                }
+            };
+
+            return scm.decorateCommit({
+                sha: '40171b678527',
+                scmUri: 'bitbucket.org:batman/{1234}:test',
+                token
+            }).then((decorated) => {
+                assert.calledTwice(requestMock);
+                assert.deepEqual(decorated, expected);
+            });
+        });
+
+        it('rejects if status code is not 200', () => {
+            fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
+
+            requestMock.withArgs(repoOptions).yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.decorateCommit({
+                sha: '40171b678527',
+                scmUri: 'bitbucket.org:batman/{1234}:test',
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledOnce(requestMock);
+                assert.match(error.message, 'STATUS CODE 404');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const err = new Error('Bitbucket API error');
+
+            requestMock.withArgs(repoOptions).yieldsAsync(err);
+
+            return scm.decorateCommit({
+                sha: '40171b678527',
+                scmUri: 'bitbucket.org:batman/{1234}:test',
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.called(requestMock);
+                assert.equal(error, err);
+            });
+        });
+    });
+
     describe('stats', () => {
         it('returns the correct stats', () => {
             assert.deepEqual(scm.stats(), {
                 requests: {
-                    total: 1,
-                    timeouts: 2,
-                    success: 3,
-                    failure: 4,
-                    concurrent: 5,
-                    averageTime: 6
+                    total: 0,
+                    timeouts: 0,
+                    success: 0,
+                    failure: 0,
+                    concurrent: 0,
+                    averageTime: 0
                 },
                 breaker: {
-                    isClosed: false
+                    isClosed: true
                 }
             });
         });
