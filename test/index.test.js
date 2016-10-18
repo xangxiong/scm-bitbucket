@@ -7,6 +7,7 @@ const testPayloadOpen = require('./data/pr.opened.json');
 const testPayloadClose = require('./data/pr.closed.json');
 const testPayloadPush = require('./data/repo.push.json');
 const token = 'myAccessToken';
+const API_URL_V1 = 'https://api.bitbucket.org/1.0';
 const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 
 require('sinon-as-promised');
@@ -529,6 +530,306 @@ describe('index', () => {
                 assert.fail('Should not get here');
             }).catch((error) => {
                 assert.called(requestMock);
+                assert.equal(error, err);
+            });
+        });
+    });
+
+    describe('getCommitSha', () => {
+        const apiUrl =
+            `${API_URL_V2}/repositories/batman/{1234}/refs/branches/mybranch?access_key=${token}`;
+        const scmUri = 'bitbucket.org:batman/{1234}:mybranch';
+        const expectedOptions = {
+            url: apiUrl,
+            method: 'GET'
+        };
+        let fakeResponse;
+
+        beforeEach(() => {
+            fakeResponse = {
+                statusCode: 200,
+                body: {
+                    target: {
+                        hash: 'b98ff332acceca6c477ccd7718b2efa8c67999bb'
+                    }
+                }
+            };
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+        });
+
+        it('resolves to correct commit sha', () =>
+            scm.getCommitSha({
+                scmUri,
+                token
+            }).then((sha) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.deepEqual(sha, 'b98ff332acceca6c477ccd7718b2efa8c67999bb');
+            })
+        );
+
+        it('rejects if status code is not 200', () => {
+            fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
+
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.getCommitSha({
+                scmUri,
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.match(error.message, 'STATUS CODE 404');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const err = new Error('Bitbucket API error');
+
+            requestMock.yieldsAsync(err);
+
+            return scm.getCommitSha({
+                scmUri,
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.equal(error, err);
+            });
+        });
+    });
+
+    describe('getFile', () => {
+        const apiUrl = `${API_URL_V1}/repositories/batman/{1234}/` +
+            `src/mybranch/testFile.txt?access_key=${token}`;
+        const scmUri = 'bitbucket.org:batman/{1234}:mybranch';
+        const params = {
+            scmUri,
+            token,
+            path: 'testFile.txt',
+            ref: 'mybranch'
+        };
+        const expectedOptions = {
+            url: apiUrl,
+            method: 'GET'
+        };
+        let fakeResponse;
+
+        beforeEach(() => {
+            fakeResponse = {
+                statusCode: 200,
+                body: {
+                    node: '25e63fb4ee8a',
+                    path: 'testFile.txt',
+                    data: 'THIS IS A TEST',
+                    size: 14
+                }
+            };
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+        });
+
+        it('resolves to correct commit sha', () =>
+            scm.getFile(params).then((content) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.deepEqual(content, 'THIS IS A TEST');
+            })
+        );
+
+        it('rejects if status code is not 200', () => {
+            fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
+
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.getFile(params).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.match(error.message, 'STATUS CODE 404');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const err = new Error('Bitbucket API error');
+
+            requestMock.yieldsAsync(err);
+
+            return scm.getFile(params).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.equal(error, err);
+            });
+        });
+    });
+
+    describe('getPermissions', () => {
+        const pull = {
+            url: `${API_URL_V2}/repositories/batman?access_key=${token}`,
+            method: 'GET'
+        };
+        const push = {
+            url: `${API_URL_V2}/repositories/batman?role=contributor&access_key=${token}`,
+            method: 'GET'
+        };
+        const admin = {
+            url: `${API_URL_V2}/repositories/batman?role=admin&access_key=${token}`,
+            method: 'GET'
+        };
+        const readResponse = {
+            statusCode: 200,
+            body: {
+                values: [
+                    { uuid: '{repo1}' },
+                    { uuid: '{repo2}' },
+                    { uuid: '{repo3}' }
+                ]
+            }
+        };
+        const writeResponse = {
+            statusCode: 200,
+            body: {
+                values: [
+                    { uuid: '{repo1}' },
+                    { uuid: '{repo2}' }
+                ]
+            }
+        };
+        const adminResponse = {
+            statusCode: 200,
+            body: {
+                values: [
+                    { uuid: '{repo1}' }
+                ]
+            }
+        };
+
+        beforeEach(() => {
+            requestMock.withArgs(pull).yieldsAsync(null, readResponse, readResponse.body);
+            requestMock.withArgs(push).yieldsAsync(null, writeResponse, writeResponse.body);
+            requestMock.withArgs(admin).yieldsAsync(null, adminResponse, adminResponse.body);
+        });
+
+        it('get correct admin permissions', () => {
+            const scmUri = 'bitbucket.org:batman/{repo1}:mybranch';
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then((permissions) => {
+                assert.calledThrice(requestMock);
+                assert.calledWith(requestMock, pull);
+                assert.calledWith(requestMock, push);
+                assert.calledWith(requestMock, admin);
+                assert.deepEqual(permissions, {
+                    admin: true,
+                    push: true,
+                    pull: true
+                });
+            });
+        });
+
+        it('get correct push permissions', () => {
+            const scmUri = 'bitbucket.org:batman/{repo2}:mybranch';
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then((permissions) => {
+                assert.calledThrice(requestMock);
+                assert.calledWith(requestMock, pull);
+                assert.calledWith(requestMock, push);
+                assert.calledWith(requestMock, admin);
+                assert.deepEqual(permissions, {
+                    admin: false,
+                    push: true,
+                    pull: true
+                });
+            });
+        });
+
+        it('get correct pull permissions', () => {
+            const scmUri = 'bitbucket.org:batman/{repo3}:mybranch';
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then((permissions) => {
+                assert.deepEqual(permissions, {
+                    admin: false,
+                    push: false,
+                    pull: true
+                });
+            });
+        });
+
+        it('no permissions', () => {
+            const scmUri = 'bitbucket.org:batman/{repo4}:mybranch';
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then((permissions) => {
+                assert.deepEqual(permissions, {
+                    admin: false,
+                    push: false,
+                    pull: false
+                });
+            });
+        });
+
+        it('rejects if status code is not 200', () => {
+            const scmUri = 'bitbucket.org:batman/{repo5}:mybranch';
+            const fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
+
+            requestMock.withArgs(pull).yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((error) => {
+                assert.match(error.message, 'STATUS CODE 404');
+            });
+        });
+
+        it('rejects if fails', () => {
+            const error = new Error('Bitbucket API error');
+            const scmUri = 'bitbucket.org:batman/{repo5}:mybranch';
+
+            requestMock.withArgs(pull).yieldsAsync(error);
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((err) => {
                 assert.equal(error, err);
             });
         });
