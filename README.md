@@ -94,7 +94,7 @@ Decorated commit in the form of:
 ```
 
 #### Expected Promise response
-1. Resolve with a decorate commit object for the repository
+1. Resolve with a decorated commit object for the repository
 2. Reject if not able to decorate commit
 
 ### decorateAuthor
@@ -118,8 +118,84 @@ Decorated author in the form of:
 ```
 
 #### Expected Promise response
-1. Resolve with a decorate author object for the repository
+1. Resolve with a decorated author object for the repository
 2. Reject if not able to decorate author
+
+### getPermissions
+Required parameters:
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.scmUri | String | The scm uri to get permissions on (ex: `bitbucket.org:batman/{1234}:branchName`) |
+| config.token | String | Access token for scm |
+
+#### Expected Outcome
+Permissions for a given token on a repository in the form of:
+```js
+{
+    admin: true,
+    push: true,
+    pull: true
+}
+```
+
+#### Expected Promise response
+1. Resolve with a permissions object for the repository
+2. Reject if not able to get permissions
+
+### getCommitSha
+Required parameters:
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.scmUri | String | The scm uri (ex: `bitbucket.orgin:batman/{1234}:branchName`) |
+| config.token | String | Access token for scm |
+
+#### Expected Outcome
+The commit sha for a given branch on a repository.
+
+#### Expected Promise response
+1. Resolve with a commit sha string for the given `scmUri`
+2. Reject if not able to get a sha
+
+### getFile
+The parameters required are:
+
+| Parameter        | Type  | Required | Description |
+| :-------------   | :---- | :------- | :-------------|
+| config        | Object | true | Configuration Object |
+| config.scmUri | String | true | The scm uri (ex: `bitbucket.org:batman/{1234}:branchName`) |
+| config.token | String | true | Access token for scm |
+| config.path | String | true | The path to the file on scm to read. For example: `screwdriver.yaml` |
+| config.ref | String | false | The reference to the scm repo, could be a branch or sha |
+
+#### Expected Outcome
+The contents of the file at `path` in the repository
+
+#### Expected Promise Response
+1. Resolve with the contents of `path`
+2. Reject if the `path` cannot be downloaded, decoded, or is not a file
+
+### updateCommitStatus
+The parameters required are:
+
+| Parameter        | Type  | Required | Description |
+| :-------------   | :---- | :------- | :-------------|
+| config        | Object | true | Configuration Object |
+| config.scmUri | String | true | The scm uri (ex: `bitbucket.org:batman/{1234}:branchName`) |
+| config.token | String | true | Access token for scm |
+| config.sha | String | true | The scm sha to update a status for |
+| config.buildStatus | String | true | The screwdriver build status to translate into scm commit status |
+| config.url | String | false | The target url for setting up details |
+
+#### Expected Outcome
+Update the commit status for a given repository and sha.
+
+#### Expected Promise Response
+1. Resolves to response when the commit status was updated
+2. Reject if the commit status fails to update
 
 ## Testing
 
