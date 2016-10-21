@@ -82,7 +82,8 @@ class BitbucketScm extends Scm {
             `/refs/branches/${repoInfo.branch}?access_key=${config.token}`;
         const options = {
             url: branchUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
 
         return this.breaker.runCommand(options)
@@ -164,7 +165,8 @@ class BitbucketScm extends Scm {
     _decorateAuthor(config) {
         const options = {
             url: `${USER_URL}/${config.username}?access_key=${config.token}`,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
 
         return this.breaker.runCommand(options)
@@ -198,7 +200,8 @@ class BitbucketScm extends Scm {
         const scm = getScmUriParts(config.scmUri);
         const options = {
             url: `${REPO_URL}/${scm.repoId}?access_key=${config.token}`,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
 
         return this.breaker.runCommand(options)
@@ -230,7 +233,8 @@ class BitbucketScm extends Scm {
         const scm = getScmUriParts(config.scmUri);
         const options = {
             url: `${REPO_URL}/${scm.repoId}/commit/${config.sha}?access_key=${config.token}`,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
 
         return this.breaker.runCommand(options)
@@ -267,7 +271,8 @@ class BitbucketScm extends Scm {
             `${REPO_URL}/${scm.repoId}/refs/branches/${scm.branch}?access_key=${config.token}`;
         const options = {
             url: branchUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
 
         return this.breaker.runCommand(options)
@@ -298,7 +303,8 @@ class BitbucketScm extends Scm {
         const fileUrl = `${urlRoot}/${urlSuffix}?${urlParameters}`;
         const options = {
             url: fileUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
 
         return this.breaker.runCommand(options)
@@ -325,7 +331,8 @@ class BitbucketScm extends Scm {
             const [owner, uuid] = repoId.split('/');
             const options = {
                 url: `${API_URL_V2}/repositories/${owner}`,
-                method: 'GET'
+                method: 'GET',
+                json: true
             };
 
             if (desiredAccess === 'admin') {
