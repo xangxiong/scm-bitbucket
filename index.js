@@ -78,18 +78,22 @@ class BitbucketScm extends Scm {
      */
     _parseUrl(config) {
         const repoInfo = getRepoInfo(config.checkoutUrl);
-        const branchUrl = `${REPO_URL}/${repoInfo.username}/${repoInfo.repo}` +
-            `/refs/branches/${repoInfo.branch}?access_key=${config.token}`;
+        const branchUrl =
+            `${REPO_URL}/${repoInfo.username}/${repoInfo.repo}/refs/branches/${repoInfo.branch}`;
         const options = {
             url: branchUrl,
             method: 'GET',
-            json: true
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         };
 
         return this.breaker.runCommand(options)
             .then((response) => {
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${response.body}`);
+                    throw new Error(
+                        `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
 
                 return `${repoInfo.hostname}:${repoInfo.username}` +
@@ -164,9 +168,12 @@ class BitbucketScm extends Scm {
      */
     _decorateAuthor(config) {
         const options = {
-            url: `${USER_URL}/${config.username}?access_key=${config.token}`,
+            url: `${USER_URL}/${config.username}`,
             method: 'GET',
-            json: true
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         };
 
         return this.breaker.runCommand(options)
@@ -174,7 +181,7 @@ class BitbucketScm extends Scm {
                 const body = response.body;
 
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${body}`);
+                    throw new Error(`STATUS CODE ${response.statusCode}: ${JSON.stringify(body)}`);
                 }
 
                 return {
@@ -199,9 +206,12 @@ class BitbucketScm extends Scm {
     _decorateUrl(config) {
         const scm = getScmUriParts(config.scmUri);
         const options = {
-            url: `${REPO_URL}/${scm.repoId}?access_key=${config.token}`,
+            url: `${REPO_URL}/${scm.repoId}`,
             method: 'GET',
-            json: true
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         };
 
         return this.breaker.runCommand(options)
@@ -209,7 +219,8 @@ class BitbucketScm extends Scm {
                 const body = response.body;
 
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${body}`);
+                    throw new Error(
+                        `STATUS CODE ${response.statusCode}: ${JSON.stringify(body)}`);
                 }
 
                 return {
@@ -232,9 +243,12 @@ class BitbucketScm extends Scm {
     _decorateCommit(config) {
         const scm = getScmUriParts(config.scmUri);
         const options = {
-            url: `${REPO_URL}/${scm.repoId}/commit/${config.sha}?access_key=${config.token}`,
+            url: `${REPO_URL}/${scm.repoId}/commit/${config.sha}`,
             method: 'GET',
-            json: true
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         };
 
         return this.breaker.runCommand(options)
@@ -242,7 +256,7 @@ class BitbucketScm extends Scm {
                 const body = response.body;
 
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${body}`);
+                    throw new Error(`STATUS CODE ${response.statusCode}: ${JSON.stringify(body)}`);
                 }
 
                 // eslint-disable-next-line
@@ -268,17 +282,21 @@ class BitbucketScm extends Scm {
     _getCommitSha(config) {
         const scm = getScmUriParts(config.scmUri);
         const branchUrl =
-            `${REPO_URL}/${scm.repoId}/refs/branches/${scm.branch}?access_key=${config.token}`;
+            `${REPO_URL}/${scm.repoId}/refs/branches/${scm.branch}`;
         const options = {
             url: branchUrl,
             method: 'GET',
-            json: true
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         };
 
         return this.breaker.runCommand(options)
             .then((response) => {
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${response.body}`);
+                    throw new Error(
+                        `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
 
                 return response.body.target.hash;
@@ -292,25 +310,27 @@ class BitbucketScm extends Scm {
      * @param  {String}   config.scmUri       The scmUri
      * @param  {String}   config.path         The file in the repo to fetch
      * @param  {String}   config.token        The token used to authenticate to the SCM
-     * @param  {String}   config.ref          The reference to the SCM, either branch or sha
+     * @param  {String}   [config.ref]        The reference to the SCM, either branch or sha
      * @return {Promise}                      Resolves to the content of the file
      */
     _getFile(config) {
         const scm = getScmUriParts(config.scmUri);
-        const urlRoot = `${API_URL_V1}/repositories/${scm.repoId}`;
-        const urlSuffix = `src/${config.ref}/${config.path}`;
-        const urlParameters = `access_key=${config.token}`;
-        const fileUrl = `${urlRoot}/${urlSuffix}?${urlParameters}`;
+        const branch = config.ref || scm.branch;
+        const fileUrl = `${API_URL_V1}/repositories/${scm.repoId}/src/${branch}/${config.path}`;
         const options = {
             url: fileUrl,
             method: 'GET',
-            json: true
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         };
 
         return this.breaker.runCommand(options)
             .then((response) => {
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${response.body}`);
+                    throw new Error(
+                        `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
 
                 return response.body.data;
@@ -332,21 +352,25 @@ class BitbucketScm extends Scm {
             const options = {
                 url: `${API_URL_V2}/repositories/${owner}`,
                 method: 'GET',
-                json: true
+                json: true,
+                auth: {
+                    bearer: token
+                }
             };
 
             if (desiredAccess === 'admin') {
-                options.url = `${options.url}?role=admin&access_key=${token}`;
+                options.url = `${options.url}?role=admin`;
             } else if (desiredAccess === 'push') {
-                options.url = `${options.url}?role=contributor&access_key=${token}`;
+                options.url = `${options.url}?role=contributor`;
             } else {
-                options.url = `${options.url}?access_key=${token}`;
+                options.url = `${options.url}`;
             }
 
             return this.breaker.runCommand(options)
                 .then((response) => {
                     if (response.statusCode !== 200) {
-                        throw new Error(`STATUS CODE ${response.statusCode}: ${response.body}`);
+                        throw new Error(
+                            `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                     }
 
                     return response.body.values.some(r => r.uuid === uuid);
@@ -396,7 +420,8 @@ class BitbucketScm extends Scm {
         return this.breaker.runCommand(options)
             .then((response) => {
                 if (response.statusCode !== 200) {
-                    throw new Error(`STATUS CODE ${response.statusCode}: ${response.body}`);
+                    throw new Error(
+                        `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
 
                 return response;
