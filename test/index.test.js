@@ -69,7 +69,8 @@ describe('index', () => {
             };
             expectedOptions = {
                 url: `${apiUrl}/mynewbranch?access_key=myAccessToken`,
-                method: 'GET'
+                method: 'GET',
+                json: true
             };
             requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
         });
@@ -80,7 +81,8 @@ describe('index', () => {
 
             expectedOptions = {
                 url: `${apiUrl}/master?access_key=myAccessToken`,
-                method: 'GET'
+                method: 'GET',
+                json: true
             };
 
             return scm.parseUrl({
@@ -246,7 +248,8 @@ describe('index', () => {
         const apiUrl = `${API_URL_V2}/users/batman?access_key=${token}`;
         const expectedOptions = {
             url: apiUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         let fakeResponse;
 
@@ -333,7 +336,8 @@ describe('index', () => {
         const selfLink = 'https://bitbucket.org/d2lam2/test';
         const repoOptions = {
             url: apiUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         let fakeResponse;
         let expectedOptions;
@@ -352,7 +356,8 @@ describe('index', () => {
             };
             expectedOptions = {
                 url: apiUrl,
-                method: 'GET'
+                method: 'GET',
+                json: true
             };
             requestMock.withArgs(repoOptions)
                 .yieldsAsync(null, fakeResponse, fakeResponse.body);
@@ -422,11 +427,13 @@ describe('index', () => {
         const selfLink = 'https://bitbucket.org/batman/test/commits/40171b678527';
         const repoOptions = {
             url: repoUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         const authorOptions = {
             url: authorUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         let fakeResponse;
         let fakeAuthorResponse;
@@ -541,7 +548,8 @@ describe('index', () => {
         const scmUri = 'bitbucket.org:batman/{1234}:mybranch';
         const expectedOptions = {
             url: apiUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         let fakeResponse;
 
@@ -620,7 +628,8 @@ describe('index', () => {
         };
         const expectedOptions = {
             url: apiUrl,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         let fakeResponse;
 
@@ -682,15 +691,18 @@ describe('index', () => {
     describe('getPermissions', () => {
         const pull = {
             url: `${API_URL_V2}/repositories/batman?access_key=${token}`,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         const push = {
             url: `${API_URL_V2}/repositories/batman?role=contributor&access_key=${token}`,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         const admin = {
             url: `${API_URL_V2}/repositories/batman?role=admin&access_key=${token}`,
-            method: 'GET'
+            method: 'GET',
+            json: true
         };
         const readResponse = {
             statusCode: 200,
