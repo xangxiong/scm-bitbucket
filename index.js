@@ -120,8 +120,10 @@ class BitbucketScm extends Scm {
      * @return {Object}           A key-map of data related to the received payload
      */
     _parseHook(headers, payload) {
-        const [typeHeader, actionHeader] = headers['X-Event-Key'].split(':');
+        const [typeHeader, actionHeader] = headers['x-event-key'].split(':');
         const parsed = {};
+
+        parsed.hookId = headers['x-request-uuid'];
 
         switch (typeHeader) {
         case 'repo': {

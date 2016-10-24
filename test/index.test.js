@@ -182,10 +182,12 @@ describe('index', () => {
                 branch: 'mynewbranch',
                 sha: '40171b678527',
                 prNum: 3,
-                prRef: 'refs/pull-request/3/from'
+                prRef: 'refs/pull-request/3/from',
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
             const headers = {
-                'X-Event-Key': 'pullrequest:created'
+                'x-event-key': 'pullrequest:created',
+                'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
 
             return scm.parseHook(headers, testPayloadOpen)
@@ -201,10 +203,12 @@ describe('index', () => {
                 branch: 'mynewbranch',
                 sha: '40171b678527',
                 prNum: 3,
-                prRef: 'refs/pull-request/3/from'
+                prRef: 'refs/pull-request/3/from',
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
             const headers = {
-                'X-Event-Key': 'pullrequest:fullfilled'
+                'x-event-key': 'pullrequest:fullfilled',
+                'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
 
             return scm.parseHook(headers, testPayloadClose)
@@ -218,10 +222,12 @@ describe('index', () => {
                 username: 'batman',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
                 branch: 'stuff',
-                sha: '9ff49b2d1437567cad2b5fed7a0706472131e927'
+                sha: '9ff49b2d1437567cad2b5fed7a0706472131e927',
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
             const headers = {
-                'X-Event-Key': 'repo:push'
+                'x-event-key': 'repo:push',
+                'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
 
             return scm.parseHook(headers, testPayloadPush)
@@ -230,7 +236,7 @@ describe('index', () => {
 
         it('throws error if events are not supported: repoFork', () => {
             const repoFork = {
-                'X-Event-Key': 'repo:fork'
+                'x-event-key': 'repo:fork'
             };
 
             return scm.parseHook(repoFork, {})
@@ -243,7 +249,7 @@ describe('index', () => {
 
         it('throws error if events are not supported: prComment', () => {
             const prComment = {
-                'X-Event-Key': 'pullrequest:comment_created'
+                'x-event-key': 'pullrequest:comment_created'
             };
 
             return scm.parseHook(prComment, {})
@@ -256,7 +262,7 @@ describe('index', () => {
 
         it('throws error if events are not supported: issueCreated', () => {
             const issueCreated = {
-                'X-Event-Key': 'issue:created'
+                'x-event-key': 'issue:created'
             };
 
             return scm.parseHook(issueCreated, {})
