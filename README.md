@@ -213,7 +213,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-scm-bitbucket.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/scm-bitbucket.svg
 [issues-url]: https://github.com/screwdriver-cd/scm-bitbucket/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/b1bdad711ff12c229a9fa6ed7831703dd74c3a93/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/b1bdad711ff12c229a9fa6ed7831703dd74c3a93
+[status-image]: https://cd.screwdriver.cd/pipelines/2118d3886986f0bb831667abb4b36a20c52ed373/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/2118d3886986f0bb831667abb4b36a20c52ed373
 [daviddm-image]: https://david-dm.org/screwdriver-cd/scm-bitbucket.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/scm-bitbucket
