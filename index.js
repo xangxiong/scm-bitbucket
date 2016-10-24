@@ -3,6 +3,7 @@
 const Fusebox = require('circuit-fuses');
 const Scm = require('screwdriver-scm-base');
 const hoek = require('hoek');
+const joi = require('joi');
 const url = require('url');
 const request = require('request');
 const schema = require('screwdriver-data-schema');
@@ -58,14 +59,23 @@ class BitbucketScm extends Scm {
     /**
      * Constructor for Scm
      * @method constructor
-     * @param  {Object}    config               Configuration
-     * @param  {String}    [config.fusebox]     Options for the circuit breaker
-     * @return {ScmBase}
+     * @param  {String}  options.oauthClientId       OAuth Client ID provided by Bitbucket application
+     * @param  {String}  options.oauthClientSecret   OAuth Client Secret provided by Bitbucket application
+     * @param  {Boolean} [options.https=false]       Is the Screwdriver API running over HTTPS
+     * @param  {Object}  [options.fusebox={}]        Circuit Breaker configuration
+     * @return {BitbucketScm}
      */
-    constructor(config) {
-        super(config);
+    constructor(config = {}) {
+        super();
 
-        this.breaker = new Fusebox(request, config.fusebox);
+        this.config = joi.attempt(config, joi.object().keys({
+            https: joi.boolean().optional().default(false),
+            oauthClientId: joi.string().required(),
+            oauthClientSecret: joi.string().required(),
+            fusebox: joi.object().default({})
+        }).unknown(true), 'Invalid config for Bitbucket');
+
+        this.breaker = new Fusebox(request, this.config.fusebox);
     }
 
     /**
@@ -426,6 +436,21 @@ class BitbucketScm extends Scm {
 
                 return response;
             });
+    }
+
+   /**
+    * Return a valid Bell configuration (for OAuth)
+    * @method getBellConfiguration
+    * @return {Promise}
+    */
+    _getBellConfiguration() {
+        return Promise.resolve({
+            provider: 'bitbucket',
+            clientId: this.oauthClientId,
+            clientSecret: this.oauthClientSecret,
+            isSecure: this.config.https,
+            forceHttps: this.config.https
+        });
     }
 
     /**
