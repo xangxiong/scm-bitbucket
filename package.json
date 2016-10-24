@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-scm-bitbucket",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "This scm plugin extends the [scm-base-class](https://github.com/screwdriver-cd/scm-base), and provides methods to fetch and update data in Bitbucket.",
   "main": "index.js",
   "scripts": {
@@ -41,8 +41,9 @@
   "dependencies": {
     "circuit-fuses": "^2.1.0",
     "hoek": "^4.1.0",
+    "joi": "^9.2.0",
     "request": "^2.75.0",
     "screwdriver-data-schema": "^14.0.1",
-    "screwdriver-scm-base": "^2.0.0"
+    "screwdriver-scm-base": "^2.1.0"
   }
 }

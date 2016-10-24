@@ -34,7 +34,13 @@ describe('index', () => {
         /* eslint-enable global-require */
 
         scm = new BitbucketScm({
-            fusebox: { retry: { minTimeout: 1 } }
+            fusebox: {
+                retry: {
+                    minTimeout: 1
+                }
+            },
+            oauthClientId: 'myclientid',
+            oauthClientSecret: 'myclientsecret'
         });
     });
 
@@ -45,6 +51,18 @@ describe('index', () => {
 
     after(() => {
         mockery.disable();
+    });
+
+    describe('constructor', () => {
+        it('validates input', () => {
+            try {
+                scm = new BitbucketScm();
+                assert.fail('should not get here');
+            } catch (err) {
+                assert.instanceOf(err, Error);
+                assert.equal(err.name, 'ValidationError');
+            }
+        });
     });
 
     describe('parseUrl', () => {
@@ -965,6 +983,20 @@ describe('index', () => {
             }).catch((error) => {
                 assert.calledWith(requestMock, expectedOptions);
                 assert.equal(error, err);
+            });
+        });
+    });
+
+    describe('getBellConfiguration', () => {
+        it('returns a default configuration', () => {
+            scm.getBellConfiguration().then((config) => {
+                assert.deepEqual(config, {
+                    clientId: 'myclientid',
+                    clietnSecrets: 'myclientsecret',
+                    forceHttps: false,
+                    isSecure: false,
+                    provider: 'bitbucket'
+                });
             });
         });
     });
