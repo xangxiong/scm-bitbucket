@@ -63,6 +63,19 @@ describe('index', () => {
                 assert.equal(err.name, 'ValidationError');
             }
         });
+        it('constructs successfully', () => {
+            const testScm = new BitbucketScm({
+                oauthClientId: 'myclientid',
+                oauthClientSecret: 'myclientsecret'
+            });
+
+            assert.deepEqual(testScm.config, {
+                oauthClientId: 'myclientid',
+                oauthClientSecret: 'myclientsecret',
+                fusebox: {},
+                https: false
+            });
+        });
     });
 
     describe('parseUrl', () => {
@@ -77,12 +90,12 @@ describe('index', () => {
                     repository: {
                         html: {
                             href: 'https://bitbucket.org/batman/test'
-                        }
-                    },
-                    type: 'repository',
-                    name: 'test',
-                    full_name: 'batman/test',
-                    uuid: '{de7d7695-1196-46a1-b87d-371b7b2945ab}'
+                        },
+                        type: 'repository',
+                        name: 'test',
+                        full_name: 'batman/test',
+                        uuid: '{de7d7695-1196-46a1-b87d-371b7b2945ab}'
+                    }
                 }
             };
             expectedOptions = {
@@ -179,10 +192,10 @@ describe('index', () => {
                 action: 'opened',
                 username: 'batman',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
-                branch: 'mynewbranch',
+                branch: 'master',
                 sha: '40171b678527',
                 prNum: 3,
-                prRef: 'refs/pull-request/3/from',
+                prRef: 'mynewbranch',
                 hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
             const headers = {
@@ -200,10 +213,10 @@ describe('index', () => {
                 action: 'closed',
                 username: 'batman',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
-                branch: 'mynewbranch',
+                branch: 'master',
                 sha: '40171b678527',
                 prNum: 3,
-                prRef: 'refs/pull-request/3/from',
+                prRef: 'mynewbranch',
                 hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
             const headers = {
@@ -994,17 +1007,17 @@ describe('index', () => {
     });
 
     describe('getBellConfiguration', () => {
-        it('returns a default configuration', () => {
+        it('returns a default configuration', () =>
             scm.getBellConfiguration().then((config) => {
                 assert.deepEqual(config, {
                     clientId: 'myclientid',
-                    clietnSecrets: 'myclientsecret',
+                    clientSecret: 'myclientsecret',
                     forceHttps: false,
                     isSecure: false,
                     provider: 'bitbucket'
                 });
-            });
-        });
+            })
+        );
     });
 
     describe('stats', () => {
