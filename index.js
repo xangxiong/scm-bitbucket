@@ -107,7 +107,7 @@ class BitbucketScm extends Scm {
                 }
 
                 return `${repoInfo.hostname}:${repoInfo.username}` +
-                    `/${response.body.uuid}:${repoInfo.branch}`;
+                    `/${response.body.repository.uuid}:${repoInfo.branch}`;
             });
     }
 
@@ -158,10 +158,10 @@ class BitbucketScm extends Scm {
             parsed.username = hoek.reach(payload, 'pullrequest.author.username');
             parsed.checkoutUrl = `${link.protocol}//${parsed.username}`
                 + `@${link.hostname}${link.pathname}.git`;
-            parsed.branch = hoek.reach(payload, 'pullrequest.source.branch.name');
+            parsed.branch = hoek.reach(payload, 'pullrequest.destination.branch.name');
             parsed.sha = hoek.reach(payload, 'pullrequest.source.commit.hash');
             parsed.prNum = hoek.reach(payload, 'pullrequest.id');
-            parsed.prRef = `refs/pull-request/${parsed.prNum}/from`;
+            parsed.prRef = hoek.reach(payload, 'pullrequest.source.branch.name');
 
             return parsed;
         }
@@ -448,8 +448,8 @@ class BitbucketScm extends Scm {
     _getBellConfiguration() {
         return Promise.resolve({
             provider: 'bitbucket',
-            clientId: this.oauthClientId,
-            clientSecret: this.oauthClientSecret,
+            clientId: this.config.oauthClientId,
+            clientSecret: this.config.oauthClientSecret,
             isSecure: this.config.https,
             forceHttps: this.config.https
         });
