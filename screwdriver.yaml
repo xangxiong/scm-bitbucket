@@ -1,4 +1,5 @@
 workflow:
+    - main
     - publish
 
 shared:
