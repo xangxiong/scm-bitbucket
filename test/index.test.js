@@ -186,7 +186,7 @@ describe('index', () => {
     });
 
     describe('parseHook', () => {
-        it('returns the correct parsed config for opened PR', () => {
+        it('resolves the correct parsed config for opened PR', () => {
             const expected = {
                 type: 'pr',
                 action: 'opened',
@@ -207,7 +207,7 @@ describe('index', () => {
                 .then(result => assert.deepEqual(result, expected));
         });
 
-        it('returns the correct parsed config for closed PR', () => {
+        it('resolves the correct parsed config for closed PR', () => {
             const expected = {
                 type: 'pr',
                 action: 'closed',
@@ -228,7 +228,7 @@ describe('index', () => {
                 .then(result => assert.deepEqual(result, expected));
         });
 
-        it('returns the correct parsed config for push to repo event', () => {
+        it('resolves the correct parsed config for push to repo event', () => {
             const expected = {
                 type: 'repo',
                 action: 'push',
@@ -247,43 +247,31 @@ describe('index', () => {
                 .then(result => assert.deepEqual(result, expected));
         });
 
-        it('throws error if events are not supported: repoFork', () => {
+        it('resolves null if events are not supported: repoFork', () => {
             const repoFork = {
                 'x-event-key': 'repo:fork'
             };
 
             return scm.parseHook(repoFork, {})
-                .then(() => assert.fail('Should not get here'))
-                .catch((error) => {
-                    assert.deepEqual(error.message,
-                        'Only push event is supported for repository');
-                });
+                .then(result => assert.deepEqual(result, null));
         });
 
-        it('throws error if events are not supported: prComment', () => {
+        it('resolves null if events are not supported: prComment', () => {
             const prComment = {
                 'x-event-key': 'pullrequest:comment_created'
             };
 
             return scm.parseHook(prComment, {})
-                .then(() => assert.fail('Should not get here'))
-                .catch((error) => {
-                    assert.deepEqual(error.message,
-                        'Only created and fullfilled events are supported for pullrequest');
-                });
+                .then(result => assert.deepEqual(result, null));
         });
 
-        it('throws error if events are not supported: issueCreated', () => {
+        it('resolves null if events are not supported: issueCreated', () => {
             const issueCreated = {
                 'x-event-key': 'issue:created'
             };
 
             return scm.parseHook(issueCreated, {})
-                .then(() => assert.fail('Should not get here'))
-                .catch((error) => {
-                    assert.deepEqual(error.message,
-                        'Only repository and pullrequest events are supported');
-                });
+                .then(result => assert.deepEqual(result, null));
         });
     });
 

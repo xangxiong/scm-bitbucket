@@ -128,7 +128,7 @@ class BitbucketScm extends Scm {
         switch (typeHeader) {
         case 'repo': {
             if (actionHeader !== 'push') {
-                throw new Error('Only push event is supported for repository');
+                return Promise.resolve(null);
             }
             const changes = hoek.reach(payload, 'push.changes');
             const link = url.parse(hoek.reach(payload, 'repository.links.html.href'));
@@ -141,7 +141,7 @@ class BitbucketScm extends Scm {
             parsed.branch = hoek.reach(changes[0], 'new.name');
             parsed.sha = hoek.reach(changes[0], 'new.target.hash');
 
-            return parsed;
+            return Promise.resolve(parsed);
         }
         case 'pullrequest': {
             if (actionHeader === 'created') {
@@ -149,7 +149,7 @@ class BitbucketScm extends Scm {
             } else if (actionHeader === 'fullfilled') {
                 parsed.action = 'closed';
             } else {
-                throw new Error('Only created and fullfilled events are supported for pullrequest');
+                return Promise.resolve(null);
             }
 
             const link = url.parse(hoek.reach(payload, 'repository.links.html.href'));
@@ -163,10 +163,10 @@ class BitbucketScm extends Scm {
             parsed.prNum = hoek.reach(payload, 'pullrequest.id');
             parsed.prRef = hoek.reach(payload, 'pullrequest.source.branch.name');
 
-            return parsed;
+            return Promise.resolve(parsed);
         }
         default:
-            throw new Error('Only repository and pullrequest events are supported');
+            return Promise.resolve(null);
         }
     }
 
