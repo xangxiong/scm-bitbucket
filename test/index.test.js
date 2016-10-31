@@ -981,7 +981,7 @@ describe('index', () => {
             });
         });
 
-        it('rejects if status code is not 201', () => {
+        it('rejects if status code is not 201 or 200', () => {
             fakeResponse = {
                 statusCode: 401,
                 body: {
