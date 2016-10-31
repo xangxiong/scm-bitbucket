@@ -146,7 +146,7 @@ class BitbucketScm extends Scm {
         case 'pullrequest': {
             if (actionHeader === 'created') {
                 parsed.action = 'opened';
-            } else if (actionHeader === 'fullfilled') {
+            } else if (actionHeader === 'fullfilled' || actionHeader === 'rejected') {
                 parsed.action = 'closed';
             } else {
                 return Promise.resolve(null);
@@ -431,7 +431,7 @@ class BitbucketScm extends Scm {
 
         return this.breaker.runCommand(options)
             .then((response) => {
-                if (response.statusCode !== 200) {
+                if (response.statusCode !== 201) {
                     throw new Error(
                         `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
