@@ -207,7 +207,7 @@ describe('index', () => {
                 .then(result => assert.deepEqual(result, expected));
         });
 
-        it('resolves the correct parsed config for closed PR', () => {
+        it('resolves the correct parsed config for closed PR after merged', () => {
             const expected = {
                 type: 'pr',
                 action: 'closed',
@@ -221,6 +221,27 @@ describe('index', () => {
             };
             const headers = {
                 'x-event-key': 'pullrequest:fullfilled',
+                'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+            };
+
+            return scm.parseHook(headers, testPayloadClose)
+                .then(result => assert.deepEqual(result, expected));
+        });
+
+        it('resolves the correct parsed config for closed PR after declined', () => {
+            const expected = {
+                type: 'pr',
+                action: 'closed',
+                username: 'batman',
+                checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
+                branch: 'master',
+                sha: '40171b678527',
+                prNum: 3,
+                prRef: 'mynewbranch',
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+            };
+            const headers = {
+                'x-event-key': 'pullrequest:rejected',
                 'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
 
@@ -923,7 +944,7 @@ describe('index', () => {
             };
             apiUrl = `${API_URL_V2}/repositories/batman/{1234}/commit/${config.sha}/statuses/build`;
             fakeResponse = {
-                statusCode: 200
+                statusCode: 201
             };
             expectedOptions = {
                 url: apiUrl,
@@ -960,7 +981,7 @@ describe('index', () => {
             });
         });
 
-        it('rejects if status code is not 200', () => {
+        it('rejects if status code is not 201', () => {
             fakeResponse = {
                 statusCode: 401,
                 body: {
