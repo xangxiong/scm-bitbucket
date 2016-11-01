@@ -431,7 +431,7 @@ class BitbucketScm extends Scm {
 
         return this.breaker.runCommand(options)
             .then((response) => {
-                if (response.statusCode !== 201) {
+                if (response.statusCode !== 201 && response.statusCode !== 200) {
                     throw new Error(
                         `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
