@@ -7,8 +7,7 @@ shared:
 jobs:
     main:
         steps:
-            - install: npm install
-            - test: npm test
+            - echo1: echo "bye"
 
     echostuff:
         steps:
