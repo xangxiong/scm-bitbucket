@@ -190,7 +190,7 @@ describe('index', () => {
             const expected = {
                 type: 'pr',
                 action: 'opened',
-                username: 'batman',
+                username: 'robin',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
                 branch: 'master',
                 sha: '40171b678527',
@@ -211,7 +211,7 @@ describe('index', () => {
             const expected = {
                 type: 'pr',
                 action: 'closed',
-                username: 'batman',
+                username: 'robin',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
                 branch: 'master',
                 sha: '40171b678527',
@@ -232,7 +232,7 @@ describe('index', () => {
             const expected = {
                 type: 'pr',
                 action: 'closed',
-                username: 'batman',
+                username: 'robin',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
                 branch: 'master',
                 sha: '40171b678527',
@@ -253,7 +253,7 @@ describe('index', () => {
             const expected = {
                 type: 'repo',
                 action: 'push',
-                username: 'batman',
+                username: 'robin',
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
                 branch: 'stuff',
                 sha: '9ff49b2d1437567cad2b5fed7a0706472131e927',
