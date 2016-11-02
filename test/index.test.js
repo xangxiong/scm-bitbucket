@@ -160,7 +160,7 @@ describe('index', () => {
                 });
         });
 
-        it('rejects if status code is not 200', () => {
+        it('rejects if status code is 404', () => {
             fakeResponse = {
                 statusCode: 404,
                 body: {
@@ -180,7 +180,30 @@ describe('index', () => {
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
                     assert.calledWith(requestMock, expectedOptions);
-                    assert.match(error.message, 'STATUS CODE 404');
+                    assert.match(error.message, 'Cannot find repository');
+                });
+        });
+
+        it('rejects if status code is not 200 & 404', () => {
+            fakeResponse = {
+                statusCode: 500,
+                body: {
+                    error: {
+                        message: 'Internal Server Error'
+                    }
+                }
+            };
+
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            return scm.parseUrl({
+                checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
+                token: 'myAccessToken'
+            })
+                .then(() => assert.fail('Should not get here'))
+                .catch((error) => {
+                    assert.calledWith(requestMock, expectedOptions);
+                    assert.match(error.message, 'STATUS CODE 500');
                 });
         });
     });
