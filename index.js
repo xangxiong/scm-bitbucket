@@ -101,6 +101,9 @@ class BitbucketScm extends Scm {
 
         return this.breaker.runCommand(options)
             .then((response) => {
+                if (response.statusCode === 404) {
+                    throw new Error(`Cannot find repository ${config.checkoutUrl}`);
+                }
                 if (response.statusCode !== 200) {
                     throw new Error(
                         `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
