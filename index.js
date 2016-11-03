@@ -150,6 +150,8 @@ class BitbucketScm extends Scm {
         case 'pullrequest': {
             if (actionHeader === 'created') {
                 parsed.action = 'opened';
+            } else if (actionHeader === 'updated') {
+                parsed.action = 'synchronized';
             } else if (actionHeader === 'fullfilled' || actionHeader === 'rejected') {
                 parsed.action = 'closed';
             } else {
