@@ -1,0 +1,185 @@
+{
+  "pullrequest": {
+    "type": "pullrequest",
+    "description": "* screwdriver.yaml created online with Bitbucket\r\n\r\n* add contributor",
+    "links": {
+      "decline": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/decline"
+      },
+      "commits": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/commits"
+      },
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7"
+      },
+      "comments": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/comments"
+      },
+      "merge": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/merge"
+      },
+      "html": {
+        "href": "https://bitbucket.org/batman/test/pull-requests/7"
+      },
+      "activity": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/activity"
+      },
+      "diff": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/diff"
+      },
+      "approve": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/approve"
+      },
+      "statuses": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test/pullrequests/7/statuses"
+      }
+    },
+    "title": "Prbranch",
+    "close_source_branch": false,
+    "reviewers": [],
+    "destination": {
+      "commit": {
+        "hash": "b8d698ec1ad1",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/batman/test/commit/b8d698ec1ad1"
+          }
+        }
+      },
+      "repository": {
+        "full_name": "batman/test",
+        "type": "repository",
+        "name": "test",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/batman/test"
+          },
+          "html": {
+            "href": "https://bitbucket.org/batman/test"
+          },
+          "avatar": {
+            "href": "https://bitbucket.org/batman/test/avatar/32/"
+          }
+        },
+        "uuid": "{de7d7695-1196-46a1-b87d-371b7b2945ab}"
+      },
+      "branch": {
+        "name": "master"
+      }
+    },
+    "reason": "",
+    "closed_by": null,
+    "source": {
+      "commit": {
+        "hash": "caeae8cd5fc9",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/batman/test/commit/caeae8cd5fc9"
+          }
+        }
+      },
+      "repository": {
+        "full_name": "batman/test",
+        "type": "repository",
+        "name": "test",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/batman/test"
+          },
+          "html": {
+            "href": "https://bitbucket.org/batman/test"
+          },
+          "avatar": {
+            "href": "https://bitbucket.org/batman/test/avatar/32/"
+          }
+        },
+        "uuid": "{de7d7695-1196-46a1-b87d-371b7b2945ab}"
+      },
+      "branch": {
+        "name": "prbranch"
+      }
+    },
+    "state": "OPEN",
+    "comment_count": 0,
+    "task_count": 0,
+    "created_on": "2016-11-03T18:03:05.188913+00:00",
+    "participants": [],
+    "updated_on": "2016-11-03T18:03:41.461584+00:00",
+    "author": {
+      "username": "batman",
+      "type": "user",
+      "display_name": "Batman",
+      "uuid": "{2dca4f54-ab3f-400c-a777-c059e1ac0394}",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/users/batman"
+        },
+        "html": {
+          "href": "https://bitbucket.org/batman/"
+        },
+        "avatar": {
+          "href": "https://bitbucket.org/account/batman/avatar/32/"
+        }
+      }
+    },
+    "merge_commit": null,
+    "id": 7
+  },
+  "repository": {
+    "scm": "git",
+    "website": "",
+    "name": "test",
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/repositories/batman/test"
+      },
+      "html": {
+        "href": "https://bitbucket.org/batman/test"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/batman/test/avatar/32/"
+      }
+    },
+    "full_name": "batman/test",
+    "owner": {
+      "username": "batman",
+      "type": "user",
+      "display_name": "Batman",
+      "uuid": "{2dca4f54-ab3f-400c-a777-c059e1ac0394}",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/users/batman"
+        },
+        "html": {
+          "href": "https://bitbucket.org/batman/"
+        },
+        "avatar": {
+          "href": "https://bitbucket.org/account/batman/avatar/32/"
+        }
+      }
+    },
+    "type": "repository",
+    "is_private": false,
+    "uuid": "{de7d7695-1196-46a1-b87d-371b7b2945ab}"
+  },
+  "actor": {
+    "username": "batman",
+    "website": "",
+    "display_name": "Batman",
+    "uuid": "{2dca4f54-ab3f-400c-a777-c059e1ac0394}",
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/users/batman"
+      },
+      "html": {
+        "href": "https://bitbucket.org/batman/"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/account/batman/avatar/32/"
+      }
+    },
+    "created_on": "2016-10-10T23:33:15.752655+00:00",
+    "location": null,
+    "type": "user"
+  }
+}

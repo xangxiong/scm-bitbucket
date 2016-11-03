@@ -4,6 +4,7 @@ const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
 const testPayloadOpen = require('./data/pr.opened.json');
+const testPayloadSync = require('./data/pr.sync.json');
 const testPayloadClose = require('./data/pr.closed.json');
 const testPayloadPush = require('./data/repo.push.json');
 const token = 'myAccessToken';
@@ -227,6 +228,27 @@ describe('index', () => {
             };
 
             return scm.parseHook(headers, testPayloadOpen)
+                .then(result => assert.deepEqual(result, expected));
+        });
+
+        it('resolves the correct parsed config for sync PR (ammending commit)', () => {
+            const expected = {
+                type: 'pr',
+                action: 'synchronized',
+                username: 'batman',
+                checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
+                branch: 'master',
+                sha: 'caeae8cd5fc9',
+                prNum: 7,
+                prRef: 'prbranch',
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+            };
+            const headers = {
+                'x-event-key': 'pullrequest:updated',
+                'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+            };
+
+            return scm.parseHook(headers, testPayloadSync)
                 .then(result => assert.deepEqual(result, expected));
         });
 
