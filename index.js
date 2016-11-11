@@ -496,7 +496,7 @@ class BitbucketScm extends Scm {
             command.push(`git merge ${config.sha}`);
         }
 
-        return Promise.resolve({ name: 'checkout-code', command: command.join(' && ') });
+        return Promise.resolve({ name: 'sd-checkout-code', command: command.join(' && ') });
     }
 
     /**
