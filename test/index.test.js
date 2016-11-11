@@ -3,6 +3,8 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const testCommands = require('./data/commands.json');
+const testPrCommands = require('./data/prCommands.json');
 const testPayloadOpen = require('./data/pr.opened.json');
 const testPayloadSync = require('./data/pr.sync.json');
 const testPayloadClose = require('./data/pr.closed.json');
@@ -1061,7 +1063,7 @@ describe('index', () => {
     });
 
     describe('getBellConfiguration', () => {
-        it('returns a default configuration', () =>
+        it('resolves a default configuration', () =>
             scm.getBellConfiguration().then((config) => {
                 assert.deepEqual(config, {
                     clientId: 'myclientid',
@@ -1072,6 +1074,30 @@ describe('index', () => {
                 });
             })
         );
+    });
+
+    describe('getCheckoutCommand', () => {
+        const config = {
+            branch: 'master',
+            host: 'bitbucket.org',
+            org: 'screwdriver-cd',
+            repo: 'scm-bitbucket',
+            sha: '40171b678527'
+        };
+
+        it('resolves checkout command without prRef', () =>
+            scm.getCheckoutCommand(config).then((command) => {
+                assert.deepEqual(command, testCommands);
+            })
+        );
+
+        it('resolves checkout command with prRef', () => {
+            config.prRef = 'prBranch';
+
+            return scm.getCheckoutCommand(config).then((command) => {
+                assert.deepEqual(command, testPrCommands);
+            });
+        });
     });
 
     describe('stats', () => {
