@@ -480,8 +480,8 @@ class BitbucketScm extends Scm {
 
         // Git clone
         command.push(`echo Cloning ${checkoutUrl}, on branch ${config.branch}`);
-        command.push(`git clone --quiet --progress --branch ${config.branch} ${checkoutUrl}`);
-        command.push(`cd ${config.repo}`);
+        command.push(`git clone --quiet --progress --branch ${config.branch} `
+            + `${checkoutUrl} $SD_SOURCE_DIR`);
         // Reset to Sha
         command.push(`echo Reset to SHA ${checkoutRef}`);
         command.push(`git reset --hard ${checkoutRef}`);
