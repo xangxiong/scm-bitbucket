@@ -14,4 +14,4 @@ jobs:
 
     echostuff:
         steps:
-            - echo: echo "hello"
+            - echo: echo $TEST
