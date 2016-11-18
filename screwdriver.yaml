@@ -7,11 +7,8 @@ shared:
 jobs:
     main:
         steps:
-            - echo1: echo "bye"
-        environment:
-            TEST: blah
-            
+            - echo1: echo "hello"
 
     echostuff:
         steps:
-            - echo: echo $TEST
+            - echo: echo "bye"
