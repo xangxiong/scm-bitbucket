@@ -8,6 +8,7 @@ jobs:
     main:
         steps:
             - echo1: echo "hello"
+            - test: echo Cloning github.com/screwdriver-cd/guide, on branch branchName && export SCM_URL=github.com/screwdriver-cd/guide && [[ -n \"$SCM_USERNAME\" && -n \"$SCM_ACCESS_TOKEN\" ]] && SCM_URL=\"$SCM_USERNAME:$SCM_ACCESS_TOKEN@$SCM_URL\" && echo $SCM_URL
 
     echostuff:
         steps:
