@@ -9,6 +9,9 @@ jobs:
         steps:
             - echo1: echo "hello"
             - test: "echo Cloning github.com/screwdriver-cd/guide, on branch branchName && export SCM_URL=github.com/screwdriver-cd/guide && if [ ! -z $SCM_USERNAME ] && [ ! -z $SCM_ACCESS_TOKEN ]; then echo true; else echo false; fi"
+        secrets:
+            - SCM_USERNAME
+            - SCM_ACCESS_TOKEN
 
     echostuff:
         steps:
