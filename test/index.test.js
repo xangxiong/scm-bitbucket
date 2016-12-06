@@ -434,7 +434,7 @@ describe('index', () => {
     });
 
     describe('decorateUrl', () => {
-        const apiUrl = `${API_URL_V2}/repositories/batman/{1234}`;
+        const apiUrl = `${API_URL_V2}/repositories/repoId`;
         const selfLink = 'https://bitbucket.org/d2lam2/test';
         const repoOptions = {
             url: apiUrl,
@@ -451,7 +451,7 @@ describe('index', () => {
             fakeResponse = {
                 statusCode: 200,
                 body: {
-                    full_name: 'batman/mybranch',
+                    full_name: 'username/branchName',
                     links: {
                         html: {
                             href: selfLink
@@ -474,12 +474,12 @@ describe('index', () => {
         it('resolves to correct decorated url object', () => {
             const expected = {
                 url: selfLink,
-                name: 'batman/mybranch',
-                branch: 'mybranch'
+                name: 'username/branchName',
+                branch: 'branchName'
             };
 
             return scm.decorateUrl({
-                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                scmUri: 'hostName:repoId:branchName',
                 token
             }).then((decorated) => {
                 assert.calledWith(requestMock, expectedOptions);
@@ -501,7 +501,7 @@ describe('index', () => {
             requestMock.withArgs(repoOptions).yieldsAsync(null, fakeResponse, fakeResponse.body);
 
             return scm.decorateUrl({
-                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                scmUri: 'hostName:repoId:branchName',
                 token
             }).then(() => {
                 assert.fail('Should not get here');
@@ -517,7 +517,7 @@ describe('index', () => {
             requestMock.withArgs(repoOptions).yieldsAsync(err);
 
             return scm.decorateUrl({
-                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
+                scmUri: 'repoName:repoId:branchName',
                 token
             }).then(() => {
                 assert.fail('Should not get here');
@@ -529,10 +529,11 @@ describe('index', () => {
     });
 
     describe('decorateCommit', () => {
+        const sha = '1111111111111111111111111111111111111111';
         const repoUrl =
-            `${API_URL_V2}/repositories/batman/{1234}/commit/40171b678527`;
-        const authorUrl = `${API_URL_V2}/users/batman`;
-        const selfLink = 'https://bitbucket.org/batman/test/commits/40171b678527';
+            `${API_URL_V2}/repositories/repoId/commit/${sha}`;
+        const authorUrl = `${API_URL_V2}/users/username`;
+        const selfLink = `https://bitbucket.org/repoId/commits/${sha}`;
         const repoOptions = {
             url: repoUrl,
             method: 'GET',
@@ -564,7 +565,7 @@ describe('index', () => {
                     },
                     author: {
                         user: {
-                            username: 'batman'
+                            username: 'username'
                         }
                     }
                 }
@@ -572,15 +573,15 @@ describe('index', () => {
             fakeAuthorResponse = {
                 statusCode: 200,
                 body: {
-                    username: 'batman',
-                    display_name: 'Batman',
-                    uuid: '{4f1a9b7f-586e-4e80-b9eb-a7589b4a165f}',
+                    username: 'username',
+                    display_name: 'displayName',
+                    uuid: 'uuid',
                     links: {
                         html: {
-                            href: 'https://bitbucket.org/batman/'
+                            href: 'https://bitbucket.org/username/'
                         },
                         avatar: {
-                            href: 'https://bitbucket.org/account/batman/avatar/32/'
+                            href: 'https://bitbucket.org/account/username/avatar/32/'
                         }
                     }
                 }
@@ -596,16 +597,16 @@ describe('index', () => {
                 url: selfLink,
                 message: 'testing',
                 author: {
-                    url: 'https://bitbucket.org/batman/',
-                    name: 'Batman',
-                    username: 'batman',
-                    avatar: 'https://bitbucket.org/account/batman/avatar/32/'
+                    url: 'https://bitbucket.org/username/',
+                    name: 'displayName',
+                    username: 'username',
+                    avatar: 'https://bitbucket.org/account/username/avatar/32/'
                 }
             };
 
             return scm.decorateCommit({
-                sha: '40171b678527',
-                scmUri: 'bitbucket.org:batman/{1234}:test',
+                sha,
+                scmUri: 'hostName:repoId:branchName',
                 token
             }).then((decorated) => {
                 assert.calledTwice(requestMock);
@@ -627,8 +628,8 @@ describe('index', () => {
             requestMock.withArgs(repoOptions).yieldsAsync(null, fakeResponse, fakeResponse.body);
 
             return scm.decorateCommit({
-                sha: '40171b678527',
-                scmUri: 'bitbucket.org:batman/{1234}:test',
+                sha,
+                scmUri: 'hostName:repoId:branchName',
                 token
             }).then(() => {
                 assert.fail('Should not get here');
@@ -644,8 +645,8 @@ describe('index', () => {
             requestMock.withArgs(repoOptions).yieldsAsync(err);
 
             return scm.decorateCommit({
-                sha: '40171b678527',
-                scmUri: 'bitbucket.org:batman/{1234}:test',
+                sha,
+                scmUri: 'hostName:repoId:branchName',
                 token
             }).then(() => {
                 assert.fail('Should not get here');
@@ -658,8 +659,8 @@ describe('index', () => {
 
     describe('getCommitSha', () => {
         const apiUrl =
-            `${API_URL_V2}/repositories/batman/{1234}/refs/branches/mybranch`;
-        const scmUri = 'bitbucket.org:batman/{1234}:mybranch';
+            `${API_URL_V2}/repositories/repoId/refs/branches/branchName`;
+        const scmUri = 'hostName:repoId:branchName';
         const expectedOptions = {
             url: apiUrl,
             method: 'GET',
@@ -675,7 +676,7 @@ describe('index', () => {
                 statusCode: 200,
                 body: {
                     target: {
-                        hash: 'b98ff332acceca6c477ccd7718b2efa8c67999bb'
+                        hash: 'hashValue'
                     }
                 }
             };
@@ -688,7 +689,7 @@ describe('index', () => {
                 token
             }).then((sha) => {
                 assert.calledWith(requestMock, expectedOptions);
-                assert.deepEqual(sha, 'b98ff332acceca6c477ccd7718b2efa8c67999bb');
+                assert.deepEqual(sha, 'hashValue');
             })
         );
 
@@ -734,12 +735,12 @@ describe('index', () => {
     });
 
     describe('getFile', () => {
-        const apiUrl = `${API_URL_V1}/repositories/batman/{1234}/src/mybranch/testFile.txt`;
-        const scmUri = 'bitbucket.org:batman/{1234}:mybranch';
+        const apiUrl = `${API_URL_V1}/repositories/repoId/src/branchName/path/to/file.txt`;
+        const scmUri = 'hostName:repoId:branchName';
         const params = {
             scmUri,
             token,
-            path: 'testFile.txt'
+            path: 'path/to/file.txt'
         };
         const expectedOptions = {
             url: apiUrl,
@@ -755,9 +756,9 @@ describe('index', () => {
             fakeResponse = {
                 statusCode: 200,
                 body: {
-                    node: '25e63fb4ee8a',
-                    path: 'testFile.txt',
-                    data: 'THIS IS A TEST',
+                    node: 'nodeValue',
+                    path: 'path/to/file.txt',
+                    data: 'dataValue',
                     size: 14
                 }
             };
@@ -767,7 +768,7 @@ describe('index', () => {
         it('resolves to correct commit sha', () =>
             scm.getFile(params).then((content) => {
                 assert.calledWith(requestMock, expectedOptions);
-                assert.deepEqual(content, 'THIS IS A TEST');
+                assert.deepEqual(content, 'dataValue');
             })
         );
 
@@ -808,7 +809,7 @@ describe('index', () => {
 
     describe('getPermissions', () => {
         const pull = {
-            url: `${API_URL_V2}/repositories/batman`,
+            url: `${API_URL_V2}/repositories/repoIdPrefix`,
             method: 'GET',
             json: true,
             auth: {
@@ -816,7 +817,7 @@ describe('index', () => {
             }
         };
         const push = {
-            url: `${API_URL_V2}/repositories/batman?role=contributor`,
+            url: `${API_URL_V2}/repositories/repoIdPrefix?role=contributor`,
             method: 'GET',
             json: true,
             auth: {
@@ -824,7 +825,7 @@ describe('index', () => {
             }
         };
         const admin = {
-            url: `${API_URL_V2}/repositories/batman?role=admin`,
+            url: `${API_URL_V2}/repositories/repoIdPrefix?role=admin`,
             method: 'GET',
             json: true,
             auth: {
@@ -835,9 +836,9 @@ describe('index', () => {
             statusCode: 200,
             body: {
                 values: [
-                    { uuid: '{repo1}' },
-                    { uuid: '{repo2}' },
-                    { uuid: '{repo3}' }
+                    { uuid: 'repoIdSuffix1' },
+                    { uuid: 'repoIdSuffix2' },
+                    { uuid: 'repoIdSuffix3' }
                 ]
             }
         };
@@ -845,8 +846,8 @@ describe('index', () => {
             statusCode: 200,
             body: {
                 values: [
-                    { uuid: '{repo1}' },
-                    { uuid: '{repo2}' }
+                    { uuid: 'repoIdSuffix1' },
+                    { uuid: 'repoIdSuffix2' }
                 ]
             }
         };
@@ -854,7 +855,7 @@ describe('index', () => {
             statusCode: 200,
             body: {
                 values: [
-                    { uuid: '{repo1}' }
+                    { uuid: 'repoIdSuffix1' }
                 ]
             }
         };
@@ -866,7 +867,7 @@ describe('index', () => {
         });
 
         it('get correct admin permissions', () => {
-            const scmUri = 'bitbucket.org:batman/{repo1}:mybranch';
+            const scmUri = 'hostName:repoIdPrefix/repoIdSuffix1:branchName';
 
             return scm.getPermissions({
                 scmUri,
@@ -885,7 +886,7 @@ describe('index', () => {
         });
 
         it('get correct push permissions', () => {
-            const scmUri = 'bitbucket.org:batman/{repo2}:mybranch';
+            const scmUri = 'hostName:repoIdPrefix/repoIdSuffix2:branchName';
 
             return scm.getPermissions({
                 scmUri,
@@ -904,7 +905,7 @@ describe('index', () => {
         });
 
         it('get correct pull permissions', () => {
-            const scmUri = 'bitbucket.org:batman/{repo3}:mybranch';
+            const scmUri = 'hostName:repoIdPrefix/repoIdSuffix3:branchName';
 
             return scm.getPermissions({
                 scmUri,
@@ -919,7 +920,7 @@ describe('index', () => {
         });
 
         it('no permissions', () => {
-            const scmUri = 'bitbucket.org:batman/{repo4}:mybranch';
+            const scmUri = 'hostName:repoIdPrefix/repoIdSuffix:branchName';
 
             return scm.getPermissions({
                 scmUri,
@@ -934,7 +935,7 @@ describe('index', () => {
         });
 
         it('rejects if status code is not 200', () => {
-            const scmUri = 'bitbucket.org:batman/{repo5}:mybranch';
+            const scmUri = 'hostName:repoIdPrefix/repoIdSuffix:branchName';
             const fakeResponse = {
                 statusCode: 404,
                 body: {
@@ -959,7 +960,7 @@ describe('index', () => {
 
         it('rejects if fails', () => {
             const error = new Error('Bitbucket API error');
-            const scmUri = 'bitbucket.org:batman/{repo5}:mybranch';
+            const scmUri = 'hostName:repoIdPrefix/repoIdSuffix:branchName';
 
             requestMock.withArgs(pull).yieldsAsync(error);
 
@@ -982,14 +983,14 @@ describe('index', () => {
 
         beforeEach(() => {
             config = {
-                scmUri: 'bitbucket.org:batman/{1234}:mybranch',
-                sha: '40171b6785277ed1478ee2bc8587064e5a7d9fda',
+                scmUri: 'hostName:repoId:branchName',
+                sha: '1111111111111111111111111111111111111111',
                 buildStatus: 'SUCCESS',
-                token: 'sK6-nvoU%3D',
-                url: 'https://cd.screwdriver.cd/pipelines/1234',
+                token: 'bearerToken',
+                url: 'http://valid.url',
                 jobName: 'main'
             };
-            apiUrl = `${API_URL_V2}/repositories/batman/{1234}/commit/${config.sha}/statuses/build`;
+            apiUrl = `${API_URL_V2}/repositories/repoId/commit/${config.sha}/statuses/build`;
             fakeResponse = {
                 statusCode: 201
             };
@@ -1004,7 +1005,7 @@ describe('index', () => {
                     description: 'Screwdriver/main'
                 },
                 auth: {
-                    bearer: 'sK6-nvoU='     // Decoded access token
+                    bearer: 'bearerToken'     // Decoded access token
                 }
             };
             requestMock.yieldsAsync(null, fakeResponse);
@@ -1078,11 +1079,11 @@ describe('index', () => {
 
     describe('getCheckoutCommand', () => {
         const config = {
-            branch: 'master',
-            host: 'bitbucket.org',
-            org: 'screwdriver-cd',
-            repo: 'scm-bitbucket',
-            sha: '40171b678527'
+            branch: 'branchName',
+            host: 'hostName',
+            org: 'orgName',
+            repo: 'repoName',
+            sha: 'shaValue'
         };
 
         it('resolves checkout command without prRef', () =>
@@ -1114,6 +1115,343 @@ describe('index', () => {
                 breaker: {
                     isClosed: true
                 }
+            });
+        });
+    });
+
+    describe('_addWebhook', () => {
+        const oauthToken = 'oauthToken';
+        const scmUri = 'hostName:repoId:branchName';
+
+        beforeEach(() => {
+            requestMock.yieldsAsync(null, {
+                statusCode: 200
+            });
+        });
+
+        it('works', () => {
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: {
+                    values: [],
+                    size: 0
+                },
+                statusCode: 200
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token: oauthToken,
+                url: 'url'
+            })
+            .then(() => {
+                assert.calledWith(requestMock, {
+                    json: true,
+                    login_type: 'oauth2',
+                    method: 'GET',
+                    oauth_access_token: 'oauthToken',
+                    url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=1`
+                });
+                assert.calledWith(requestMock, {
+                    body: {
+                        description: 'Screwdriver-CD build trigger',
+                        url: 'url',
+                        active: true,
+                        events: [
+                            'repo:push',
+                            'pullrequest:created',
+                            'pullrequest:fulfilled',
+                            'pullrequest:rejected',
+                            'pullrequest:updated'
+                        ]
+                    },
+                    json: true,
+                    login_type: 'oauth2',
+                    method: 'POST',
+                    oauth_access_token: 'oauthToken',
+                    url: `${API_URL_V2}/repositories/repoId/hooks`
+                });
+            });
+        });
+
+        it('updates a pre-existing webhook', () => {
+            const uuid = 'uuidValue';
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: {
+                    pagelen: 30,
+                    values: [{
+                        url: 'url',
+                        uuid
+                    }],
+                    page: 1,
+                    size: 3
+                },
+                statusCode: 200
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token: oauthToken,
+                url: 'url'
+            }).then(() => {
+                assert.calledWith(requestMock, {
+                    json: true,
+                    login_type: 'oauth2',
+                    method: 'GET',
+                    oauth_access_token: 'oauthToken',
+                    url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=1`
+                });
+                assert.calledWith(requestMock, {
+                    body: {
+                        description: 'Screwdriver-CD build trigger',
+                        url: 'url',
+                        active: true,
+                        events: [
+                            'repo:push',
+                            'pullrequest:created',
+                            'pullrequest:fulfilled',
+                            'pullrequest:rejected',
+                            'pullrequest:updated'
+                        ]
+                    },
+                    json: true,
+                    login_type: 'oauth2',
+                    method: 'PUT',
+                    oauth_access_token: oauthToken,
+                    url: `${API_URL_V2}/repositories/repoId/hooks/${uuid}`
+                });
+            });
+        });
+
+        it('updates a hook on a repo with a lot of other hooks', () => {
+            const fakeValues = [];
+            const uuid = 'uuid';
+
+            for (let i = 0; i < 30; i += 1) {
+                fakeValues.push({});
+            }
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: {
+                    pagelen: 30,
+                    values: fakeValues,
+                    page: 1,
+                    size: 30
+                },
+                statusCode: 200
+            });
+            requestMock.onSecondCall().yieldsAsync(null, {
+                body: {
+                    pagelen: 30,
+                    values: [{
+                        url: 'url',
+                        uuid: 'uuid'
+                    }],
+                    page: 2,
+                    size: 1
+                },
+                statusCode: 200
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token: oauthToken,
+                url: 'url'
+            }).then(() => {
+                assert.calledWith(requestMock, {
+                    json: true,
+                    login_type: 'oauth2',
+                    method: 'GET',
+                    oauth_access_token: 'oauthToken',
+                    url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=2`
+                });
+                assert.calledWith(requestMock, {
+                    body: {
+                        description: 'Screwdriver-CD build trigger',
+                        url: 'url',
+                        active: true,
+                        events: [
+                            'repo:push',
+                            'pullrequest:created',
+                            'pullrequest:fulfilled',
+                            'pullrequest:rejected',
+                            'pullrequest:updated'
+                        ]
+                    },
+                    json: true,
+                    login_type: 'oauth2',
+                    method: 'PUT',
+                    oauth_access_token: oauthToken,
+                    url: `${API_URL_V2}/repositories/repoId/hooks/${uuid}`
+                });
+            });
+        });
+
+        it('rejects when failing to get the current list of webhooks', () => {
+            const expectedMessage = [
+                'Your credentials lack one or more required privilege scopes.',
+                'Reason "webhook"'
+            ].join(' ');
+            const testErrorBody = {
+                type: 'error',
+                error: {
+                    message: 'Your credentials lack one or more required privilege scopes.',
+                    detail: {
+                        granted: ['repository'],
+                        required: ['webhook']
+                    }
+                }
+            };
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: testErrorBody,
+                statusCode: 403
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token,
+                url: 'url'
+            }).then(assert.fail, (err) => {
+                assert.strictEqual(err.message, expectedMessage);
+            });
+        });
+
+        it('rejects with a stringified error when bitbucket API fails to list webhooks', () => {
+            const statusCode = 500;
+            const expectedMessage = `SCM service unavailable (${statusCode}). Reason "undefined"`;
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: undefined,
+                statusCode
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token,
+                url: 'url'
+            }).then(assert.fail, (err) => {
+                assert.strictEqual(err.message, expectedMessage);
+            });
+        });
+
+        it('rejects when failing to create a webhook', () => {
+            const testErrorBody = {
+                type: 'error',
+                error: {
+                    message: 'Your credentials lack one or more required privilege scopes.',
+                    detail: {
+                        granted: ['repository'],
+                        required: ['webhook']
+                    }
+                }
+            };
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: {
+                    values: [],
+                    size: 0
+                },
+                statusCode: 200
+            });
+            requestMock.onSecondCall().yieldsAsync(null, {
+                body: testErrorBody,
+                statusCode: 403
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token,
+                url: 'url'
+            }).then(assert.fail, (err) => {
+                assert.strictEqual(err.message, [
+                    'Your credentials lack one or more required privilege scopes.',
+                    'Reason "webhook"'
+                ].join(' '));
+            });
+        });
+
+        it('rejects when failing to update a webhook', () => {
+            const expectedMessage = [
+                'Your credentials lack one or more required privilege scopes.',
+                'Reason "webhook"'
+            ].join(' ');
+            const testErrorBody = {
+                type: 'error',
+                error: {
+                    message: 'Your credentials lack one or more required privilege scopes.',
+                    detail: {
+                        granted: ['repository'],
+                        required: ['webhook']
+                    }
+                }
+            };
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: {
+                    values: [{
+                        url: 'url',
+                        uuid: 'uuid'
+                    }],
+                    size: 1
+                },
+                statusCode: 200
+            });
+            requestMock.onSecondCall().yieldsAsync(null, {
+                body: testErrorBody,
+                statusCode: 403
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token,
+                url: 'url'
+            }).then(assert.fail, (err) => {
+                assert.strictEqual(err.message, expectedMessage);
+            });
+        });
+
+        it('rejects with a stringified error when bitbucket API fails to update webhook', () => {
+            const statusCode = 500;
+            const expectedMessage = `SCM service unavailable (${statusCode}). Reason "{}"`;
+
+            requestMock.onFirstCall().yieldsAsync(null, {
+                body: {
+                    values: [{
+                        url: 'url',
+                        uuid: 'uuid'
+                    }],
+                    size: 1
+                },
+                statusCode: 200
+            });
+            requestMock.onSecondCall().yieldsAsync(null, {
+                body: {},
+                statusCode
+            });
+
+            /* eslint-disable no-underscore-dangle */
+            return scm._addWebhook({
+            /* eslint-enable no-underscore-dangle */
+                scmUri,
+                token,
+                url: 'url'
+            }).then(assert.fail, (err) => {
+                assert.strictEqual(err.message, expectedMessage);
             });
         });
     });

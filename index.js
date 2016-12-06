@@ -1,3 +1,5 @@
+/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true }] */
+
 'use strict';
 
 const Fusebox = require('circuit-fuses');
@@ -22,6 +24,35 @@ const STATE_MAP = {
     FAILURE: 'FAILED',
     ABORTED: 'STOPPED'
 };
+const WEBHOOK_PAGE_SIZE = 30;
+
+/**
+ * Check the status code of the server's response.
+ *
+ * If there was an error encountered with the request, this will format a human-readable
+ * error message.
+ * @method checkResponseError
+ * @param  {HTTPResponse}   response                               HTTP Response from `request` call
+ * @param  {Number}         response.statusCode                    HTTP status code of the HTTP request
+ * @param  {String}         [response.body.error.message]          Error message from the server
+ * @param  {String}         [response.body.error.detail.required]  Error resolution message
+ * @return {Promise}                                               Resolves when no error encountered.
+ *                                                                 Rejects when status code is non-200
+ */
+function checkResponseError(response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+        return;
+    }
+
+    const errorMessage = hoek.reach(response, 'body.error.message', {
+        default: `SCM service unavailable (${response.statusCode}).`
+    });
+    const errorReason = hoek.reach(response, 'body.error.detail.required', {
+        default: JSON.stringify(response.body)
+    });
+
+    throw new Error(`${errorMessage} Reason "${errorReason}"`);
+}
 
 /**
  * Get repo information
@@ -76,6 +107,121 @@ class BitbucketScm extends Scm {
         }).unknown(true), 'Invalid config for Bitbucket');
 
         this.breaker = new Fusebox(request, this.config.fusebox);
+    }
+
+    /**
+     * Look for a specific webhook that is attached to a repo.
+     *
+     * Searches through the webhook pages until the given webhook URL is found. If nothing is found, this will
+     * return nothing. If a status response of non-200 is encountered, the chain is rejected with the
+     * HTTP operation and the status code received.
+     * @method _findWebhook
+     * @param  {Object}     config
+     * @param  {Number}     config.page    pagination: page number to search next. 1-index.
+     * @param  {String}     config.repoId  The bitbucket repo ID (e.g., "username/repoSlug")
+     * @param  {String}     config.token   Admin Oauth2 token for the repo
+     * @param  {String}     config.url     url for webhook notifications
+     * @return {Promise}                   Resolves to a webhook information payload
+     */
+    _findWebhook(config) {
+        return this.breaker.runCommand({
+            json: true,
+            login_type: 'oauth2',
+            method: 'GET',
+            oauth_access_token: config.token,
+            url: `${API_URL_V2}/repositories/${config.repoId}/hooks?pagelen=30&page=${config.page}`
+        }).then((response) => {
+            checkResponseError(response);
+
+            const hooks = response.body;
+            const result = hooks.values.find(webhook => webhook.url === config.url);
+
+            if (!result && hooks.size >= WEBHOOK_PAGE_SIZE) {
+                return this._findWebhook({
+                    page: config.page + 1,
+                    repoId: config.repoId,
+                    token: config.token,
+                    url: config.url
+                });
+            }
+
+            return result;
+        });
+    }
+
+    /**
+     * Creates and updates the webhook that is attached to a repo.
+     *
+     * By default, it creates a new webhook. If given a webhook payload, it will instead update the webhook to
+     * ensure the correct settings are in place. If a status response of non-200 is encountered, the chain is
+     * rejected with the HTTP operation and the status code received.
+     * @method _createWebhook
+     * @param  {Object}       config
+     * @param  {Object}       [config.hookInfo] Information about an existing webhook
+     * @param  {String}       config.repoId     Bitbucket repo ID (e.g., "username/repoSlug")
+     * @param  {String}       config.token      Admin Oauth2 token for the repo
+     * @param  {String}       config.url        url to create for webhook notifications
+     * @return {Promise}                        Resolves when complete
+     */
+    _createWebhook(config) {
+        const params = {
+            body: {
+                description: 'Screwdriver-CD build trigger',
+                url: config.url,
+                active: true,
+                events: [
+                    'repo:push',
+                    'pullrequest:created',
+                    'pullrequest:fulfilled',
+                    'pullrequest:rejected',
+                    'pullrequest:updated'
+                ]
+            },
+            json: true,
+            login_type: 'oauth2',
+            method: 'POST',
+            oauth_access_token: config.token,
+            url: `${API_URL_V2}/repositories/${config.repoId}/hooks`
+        };
+
+        if (config.hookInfo) {
+            params.url = `${params.url}/${config.hookInfo.uuid}`;
+            params.method = 'PUT';
+        }
+
+        return this.breaker.runCommand(params)
+        .then(checkResponseError);
+    }
+
+    /**
+     * Adds the Screwdriver webhook to the Bitbucket repository
+     *
+     * By default, it will attach the webhook to the repository. If the webhook URL already exists, then it
+     * is instead updated.
+     * @method _addWebhook
+     * @param  {Object}    config
+     * @param  {String}    config.scmUri  The SCM URI to add the webhook to
+     * @param  {String}    config.token   Oauth2 token to authenticate with Bitbucket
+     * @param  {String}    config.url     The URL to use for webhook notifications
+     * @return {Promise}                  Resolves upon success
+     */
+    _addWebhook(config) {
+        const repoInfo = getScmUriParts(config.scmUri);
+
+        return this._findWebhook({
+            page: 1,
+            repoId: repoInfo.repoId,
+            token: config.token,
+            url: config.url
+        })
+        .then(hookInfo =>
+            this._createWebhook({
+                hookInfo,
+                repoId: repoInfo.repoId,
+                token: config.token,
+                url: config.url
+            })
+        );
     }
 
     /**

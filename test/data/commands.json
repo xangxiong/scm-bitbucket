@@ -1,4 +1,4 @@
 {
     "name": "sd-checkout-code",
-    "command": "echo Cloning https://bitbucket.org/screwdriver-cd/scm-bitbucket, on branch master && git clone --quiet --progress --branch master https://bitbucket.org/screwdriver-cd/scm-bitbucket $SD_SOURCE_DIR && echo Reset to SHA 40171b678527 && git reset --hard 40171b678527 && echo Setting user name and user email && git config user.name sd-buildbot && git config user.email dev-null@screwdriver.cd"
+    "command": "echo Cloning https://hostName/orgName/repoName, on branch branchName && git clone --quiet --progress --branch branchName https://hostName/orgName/repoName $SD_SOURCE_DIR && echo Reset to SHA shaValue && git reset --hard shaValue && echo Setting user name and user email && git config user.name sd-buildbot && git config user.email dev-null@screwdriver.cd"
 }
