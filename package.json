@@ -47,7 +47,7 @@
   "dependencies": {
     "circuit-fuses": "^2.1.0",
     "hoek": "^4.1.0",
-    "joi": "^9.2.0",
+    "joi": "^10.0.5",
     "request": "^2.75.0",
     "screwdriver-data-schema": "^15.4.0",
     "screwdriver-scm-base": "^2.4.0"
