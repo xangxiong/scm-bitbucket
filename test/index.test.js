@@ -16,7 +16,10 @@ const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('index', () => {
+describe('index', function () {
+    // Time not important. Only life important.
+    this.timeout(5000);
+
     let BitbucketScm;
     let scm;
     let requestMock;
