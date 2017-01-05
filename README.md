@@ -45,10 +45,10 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [npm-url]: https://npmjs.org/package/screwdriver-scm-bitbucket
 [downloads-image]: https://img.shields.io/npm/dt/screwdriver-scm-bitbucket.svg
 [license-image]: https://img.shields.io/npm/l/screwdriver-scm-bitbucket.svg
-[issues-image]: https://img.shields.io/github/issues/screwdriver-cd/scm-bitbucket.svg
-[issues-url]: https://github.com/screwdriver-cd/scm-bitbucket/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/2118d3886986f0bb831667abb4b36a20c52ed373/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/2118d3886986f0bb831667abb4b36a20c52ed373
+[issues-image]: https://img.shields.io/github/issues/screwdriver-cd/screwdriver.svg
+[issues-url]: https://github.com/screwdriver-cd/screwdriver/issues
+[status-image]: https://cd.screwdriver.cd/pipelines/15/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/15
 [daviddm-image]: https://david-dm.org/screwdriver-cd/scm-bitbucket.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/scm-bitbucket
 [scm-base-class]: https://github.com/screwdriver-cd/scm-base
