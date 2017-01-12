@@ -1458,4 +1458,37 @@ describe('index', function () {
             });
         });
     });
+
+    describe('_getOpenedPRs', () => {
+        const oauthToken = 'oauthToken';
+        const scmUri = 'hostName:repoId:branchName';
+
+        it('returns response of expected format from Bitbucket', () => {
+            requestMock.yieldsAsync(null, {
+                body: {
+                    values: [{
+                        id: 1,
+                        source: {
+                            branch: {
+                                name: 'testbranch'
+                            }
+                        }
+                    }]
+                },
+                statusCode: 200
+            });
+
+            // eslint-disable-next-line no-underscore-dangle
+            return scm._getOpenedPRs({
+                scmUri,
+                token: oauthToken
+            })
+            .then(response =>
+                assert.deepEqual(response, [{
+                    name: 'PR-1',
+                    ref: 'testbranch'
+                }])
+            );
+        });
+    });
 });
