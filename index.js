@@ -126,9 +126,10 @@ class BitbucketScm extends Scm {
     _findWebhook(config) {
         return this.breaker.runCommand({
             json: true,
-            login_type: 'oauth2',
             method: 'GET',
-            oauth_access_token: config.token,
+            auth: {
+                bearer: config.token
+            },
             url: `${API_URL_V2}/repositories/${config.repoId}/hooks?pagelen=30&page=${config.page}`
         }).then((response) => {
             checkResponseError(response);
@@ -178,9 +179,10 @@ class BitbucketScm extends Scm {
                 ]
             },
             json: true,
-            login_type: 'oauth2',
             method: 'POST',
-            oauth_access_token: config.token,
+            auth: {
+                bearer: config.token
+            },
             url: `${API_URL_V2}/repositories/${config.repoId}/hooks`
         };
 
@@ -654,14 +656,15 @@ class BitbucketScm extends Scm {
     * @return {Promise}
     */
     _getOpenedPRs(config) {
-        const repoId = getScmUriParts(config.scmUri)[1];
+        const repoId = getScmUriParts(config.scmUri).repoId;
 
         return this.breaker.runCommand({
-            json: true,
-            login_type: 'oauth2',
+            url: `${API_URL_V2}/repositories/${repoId}/pullrequests`,
             method: 'GET',
-            oauth_access_token: config.token,
-            url: `${API_URL_V2}/repositories/${repoId}/pullrequests`
+            json: true,
+            auth: {
+                bearer: config.token
+            }
         }).then((response) => {
             checkResponseError(response);
 
