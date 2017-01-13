@@ -646,6 +646,35 @@ class BitbucketScm extends Scm {
     }
 
     /**
+    * Get list of objects (each consists of opened PR name and ref (branch)) of a pipeline
+    * @method getOpenedPRs
+    * @param  {Object}   config              Configuration
+    * @param  {String}   config.scmUri       The scmUri to get opened PRs
+    * @param  {String}   config.token        The token used to authenticate to the SCM
+    * @return {Promise}
+    */
+    _getOpenedPRs(config) {
+        const repoId = getScmUriParts(config.scmUri)[1];
+
+        return this.breaker.runCommand({
+            json: true,
+            login_type: 'oauth2',
+            method: 'GET',
+            oauth_access_token: config.token,
+            url: `${API_URL_V2}/repositories/${repoId}/pullrequests`
+        }).then((response) => {
+            checkResponseError(response);
+
+            const prList = response.body.values;
+
+            return prList.map(pr => ({
+                name: `PR-${pr.id}`,
+                ref: pr.source.branch.name
+            }));
+        });
+    }
+
+    /**
      * Retrieve stats for the scm
      * @method stats
      * @param  {Response}    Object          Object containing stats for the scm
@@ -653,6 +682,7 @@ class BitbucketScm extends Scm {
     stats() {
         return this.breaker.stats();
     }
+
 }
 
 module.exports = BitbucketScm;
