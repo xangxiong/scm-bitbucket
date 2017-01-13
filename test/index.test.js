@@ -1151,9 +1151,10 @@ describe('index', function () {
             .then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
-                    login_type: 'oauth2',
                     method: 'GET',
-                    oauth_access_token: 'oauthToken',
+                    auth: {
+                        bearer: oauthToken
+                    },
                     url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=1`
                 });
                 assert.calledWith(requestMock, {
@@ -1170,9 +1171,10 @@ describe('index', function () {
                         ]
                     },
                     json: true,
-                    login_type: 'oauth2',
                     method: 'POST',
-                    oauth_access_token: 'oauthToken',
+                    auth: {
+                        bearer: oauthToken
+                    },
                     url: `${API_URL_V2}/repositories/repoId/hooks`
                 });
             });
@@ -1203,9 +1205,10 @@ describe('index', function () {
             }).then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
-                    login_type: 'oauth2',
                     method: 'GET',
-                    oauth_access_token: 'oauthToken',
+                    auth: {
+                        bearer: oauthToken
+                    },
                     url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=1`
                 });
                 assert.calledWith(requestMock, {
@@ -1222,9 +1225,10 @@ describe('index', function () {
                         ]
                     },
                     json: true,
-                    login_type: 'oauth2',
                     method: 'PUT',
-                    oauth_access_token: oauthToken,
+                    auth: {
+                        bearer: oauthToken
+                    },
                     url: `${API_URL_V2}/repositories/repoId/hooks/${uuid}`
                 });
             });
@@ -1269,9 +1273,10 @@ describe('index', function () {
             }).then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
-                    login_type: 'oauth2',
                     method: 'GET',
-                    oauth_access_token: 'oauthToken',
+                    auth: {
+                        bearer: oauthToken
+                    },
                     url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=2`
                 });
                 assert.calledWith(requestMock, {
@@ -1288,9 +1293,10 @@ describe('index', function () {
                         ]
                     },
                     json: true,
-                    login_type: 'oauth2',
                     method: 'PUT',
-                    oauth_access_token: oauthToken,
+                    auth: {
+                        bearer: oauthToken
+                    },
                     url: `${API_URL_V2}/repositories/repoId/hooks/${uuid}`
                 });
             });
@@ -1462,6 +1468,14 @@ describe('index', function () {
     describe('_getOpenedPRs', () => {
         const oauthToken = 'oauthToken';
         const scmUri = 'hostName:repoId:branchName';
+        const expectedOptions = {
+            url: `${API_URL_V2}/repositories/repoId/pullrequests`,
+            method: 'GET',
+            json: true,
+            auth: {
+                bearer: oauthToken
+            }
+        };
 
         it('returns response of expected format from Bitbucket', () => {
             requestMock.yieldsAsync(null, {
@@ -1483,11 +1497,13 @@ describe('index', function () {
                 scmUri,
                 token: oauthToken
             })
-            .then(response =>
+            .then((response) => {
+                assert.calledWith(requestMock, expectedOptions);
                 assert.deepEqual(response, [{
                     name: 'PR-1',
                     ref: 'testbranch'
-                }])
+                }]);
+            }
             );
         });
     });
