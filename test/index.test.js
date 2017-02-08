@@ -5,6 +5,7 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const testCommands = require('./data/commands.json');
 const testPrCommands = require('./data/prCommands.json');
+const testCustomPrCommands = require('./data/customPrCommands.json');
 const testPayloadOpen = require('./data/pr.opened.json');
 const testPayloadSync = require('./data/pr.sync.json');
 const testPayloadClose = require('./data/pr.closed.json');
@@ -72,12 +73,16 @@ describe('index', function () {
         it('constructs successfully', () => {
             const testScm = new BitbucketScm({
                 oauthClientId: 'myclientid',
-                oauthClientSecret: 'myclientsecret'
+                oauthClientSecret: 'myclientsecret',
+                username: 'abcd',
+                email: 'dev-null@my.email.com'
             });
 
             assert.deepEqual(testScm.config, {
                 oauthClientId: 'myclientid',
                 oauthClientSecret: 'myclientsecret',
+                username: 'abcd',
+                email: 'dev-null@my.email.com',
                 fusebox: {},
                 https: false
             });
@@ -1101,6 +1106,20 @@ describe('index', function () {
             return scm.getCheckoutCommand(config).then((command) => {
                 assert.deepEqual(command, testPrCommands);
             });
+        });
+
+        it('resolves checkout command with custom username and email', () => {
+            scm = new BitbucketScm({
+                oauthClientId: 'myclientid',
+                oauthClientSecret: 'myclientsecret',
+                username: 'abcd',
+                email: 'dev-null@my.email.com'
+            });
+
+            return scm.getCheckoutCommand(config)
+                .then((command) => {
+                    assert.deepEqual(command, testCustomPrCommands);
+                });
         });
     });
 

@@ -92,6 +92,8 @@ class BitbucketScm extends Scm {
      * @method constructor
      * @param  {String}  options.oauthClientId       OAuth Client ID provided by Bitbucket application
      * @param  {String}  options.oauthClientSecret   OAuth Client Secret provided by Bitbucket application
+     * @param  {String}  [options.username=sd-buildbot]           Bitbucket username for checkout
+     * @param  {String}  [options.email=dev-null@screwdriver.cd]  Bitbucket user email for checkout
      * @param  {Boolean} [options.https=false]       Is the Screwdriver API running over HTTPS
      * @param  {Object}  [options.fusebox={}]        Circuit Breaker configuration
      * @return {BitbucketScm}
@@ -100,6 +102,8 @@ class BitbucketScm extends Scm {
         super();
 
         this.config = joi.attempt(config, joi.object().keys({
+            username: joi.string().optional().default('sd-buildbot'),
+            email: joi.string().optional().default('dev-null@screwdriver.cd'),
             https: joi.boolean().optional().default(false),
             oauthClientId: joi.string().required(),
             oauthClientSecret: joi.string().required(),
@@ -635,8 +639,8 @@ class BitbucketScm extends Scm {
         command.push(`git reset --hard ${checkoutRef}`);
         // Set config
         command.push('echo Setting user name and user email');
-        command.push('git config user.name sd-buildbot');
-        command.push('git config user.email dev-null@screwdriver.cd');
+        command.push(`git config user.name ${this.config.username}`);
+        command.push(`git config user.email ${this.config.email}`);
 
         if (config.prRef) {
             command.push(`echo Fetching PR and merging with ${config.branch}`);
