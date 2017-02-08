@@ -18,6 +18,8 @@ The class has a variety of knobs to tweak when interacting with Bitbucket.org.
 | config        | Object | Configuration Object |
 | config.oauthClientId | String | OAuth Client ID provided by Bitbucket application |
 | config.oauthClientSecret | String | OAuth Client Secret provided by Bitbucket application |
+| config.username (sd-buildbot) | String | Bitbucket username for checkout |
+| config.email (dev-null@screwdriver.cd) | String | Bitbucket user email for checkout |
 | config.https (false) | Boolean | Is the Screwdriver API running over HTTPS |
 | config.fusebox ({}) | Object | [Circuit Breaker configuration][circuitbreaker] |
 ```js
