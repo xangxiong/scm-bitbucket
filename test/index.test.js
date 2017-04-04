@@ -98,14 +98,16 @@ describe('index', function () {
             fakeResponse = {
                 statusCode: 200,
                 body: {
-                    repository: {
-                        html: {
-                            href: 'https://bitbucket.org/batman/test'
-                        },
-                        type: 'repository',
-                        name: 'test',
-                        full_name: 'batman/test',
-                        uuid: '{de7d7695-1196-46a1-b87d-371b7b2945ab}'
+                    target: {
+                        repository: {
+                            html: {
+                                href: 'https://bitbucket.org/batman/test'
+                            },
+                            type: 'repository',
+                            name: 'test',
+                            full_name: 'batman/test',
+                            uuid: '{de7d7695-1196-46a1-b87d-371b7b2945ab}'
+                        }
                     }
                 }
             };
