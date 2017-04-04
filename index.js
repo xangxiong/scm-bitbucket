@@ -262,7 +262,7 @@ class BitbucketScm extends Scm {
                 }
 
                 return `${repoInfo.hostname}:${repoInfo.username}` +
-                    `/${response.body.repository.uuid}:${repoInfo.branch}`;
+                    `/${response.body.target.repository.uuid}:${repoInfo.branch}`;
             });
     }
 
