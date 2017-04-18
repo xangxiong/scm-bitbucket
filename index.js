@@ -626,14 +626,21 @@ class BitbucketScm extends Scm {
     * @return {Promise}
     */
     _getCheckoutCommand(config) {
-        const checkoutUrl = `https://${config.host}/${config.org}/${config.repo}`;
+        const checkoutUrl = `${config.host}/${config.org}/${config.repo}`;
+        const sshCheckoutUrl = `git@${config.host}:${config.org}/${config.repo}`;
         const checkoutRef = config.prRef ? config.branch : config.sha;
         const command = [];
 
         // Git clone
         command.push(`echo Cloning ${checkoutUrl}, on branch ${config.branch}`);
+        command.push('if [ -n $SCM_CLONE_TYPE ] && [ $SCM_CLONE_TYPE = ssh ]; ' +
+            `then export SCM_URL=${sshCheckoutUrl}; ` +
+            'elif [ -n $SCM_USERNAME ] && [ -n $SCM_ACCESS_TOKEN ]; ' +
+            `then export SCM_URL=https://$SCM_USERNAME:$SCM_ACCESS_TOKEN@${checkoutUrl}; ` +
+            `else export SCM_URL=https://${checkoutUrl}; fi`
+        );
         command.push(`git clone --quiet --progress --branch ${config.branch} `
-            + `${checkoutUrl} $SD_SOURCE_DIR`);
+            + '$SCM_URL $SD_SOURCE_DIR');
         // Reset to Sha
         command.push(`echo Reset to SHA ${checkoutRef}`);
         command.push(`git reset --hard ${checkoutRef}`);
