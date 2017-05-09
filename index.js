@@ -447,9 +447,14 @@ class BitbucketScm extends Scm {
      * @param  {Object}   config            Configuration
      * @param  {String}   config.scmUri     The scmUri
      * @param  {String}   config.token      The token used to authenticate to the SCM
+     * @param  {Integer}  [config.prNum]    The PR number used to fetch the PR
      * @return {Promise}                    Resolves to the sha for the scmUri
      */
     _getCommitSha(config) {
+        if (config.prNum) {
+            return this._getPrInfo(config).then(pr => pr.sha);
+        }
+
         const scm = getScmUriParts(config.scmUri);
         const branchUrl =
             `${REPO_URL}/${scm.repoId}/refs/branches/${scm.branch}`;
@@ -685,6 +690,38 @@ class BitbucketScm extends Scm {
                 name: `PR-${pr.id}`,
                 ref: pr.source.branch.name
             }));
+        });
+    }
+
+    /**
+    * Resolve a pull request object based on the config
+    * @method getPrRef
+    * @param  {Object}   config            Configuration
+    * @param  {String}   config.scmUri     The scmUri to get PR info of
+    * @param  {String}   config.token      The token used to authenticate to the SCM
+    * @param  {Integer}  config.prNum      The PR number used to fetch the PR
+    * @return {Promise}
+    */
+    _getPrInfo(config) {
+        const repoId = getScmUriParts(config.scmUri).repoId;
+
+        return this.breaker.runCommand({
+            url: `${API_URL_V2}/repositories/${repoId}/pullrequests/${config.prNum}`,
+            method: 'GET',
+            json: true,
+            auth: {
+                bearer: config.token
+            }
+        }).then((response) => {
+            checkResponseError(response);
+
+            const pr = response.body;
+
+            return {
+                name: `PR-${pr.id}`,
+                ref: pr.source.branch.name,
+                sha: pr.source.commit.hash
+            };
         });
     }
 

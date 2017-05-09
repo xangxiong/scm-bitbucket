@@ -693,7 +693,7 @@ describe('index', function () {
             requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
         });
 
-        it('resolves to correct commit sha', () =>
+        it('resolves to correct commit sha without prNum', () =>
             scm.getCommitSha({
                 scmUri,
                 token
@@ -702,6 +702,42 @@ describe('index', function () {
                 assert.deepEqual(sha, 'hashValue');
             })
         );
+
+        it('resolves to correct commit sha with prNum', () => {
+            const prNum = 1;
+            const prExpectedOptions = {
+                url: `${API_URL_V2}/repositories/repoId/pullrequests/${prNum}`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            };
+
+            requestMock.yieldsAsync(null, {
+                body: {
+                    id: 1,
+                    source: {
+                        branch: {
+                            name: 'testbranch'
+                        },
+                        commit: {
+                            hash: 'hashValue'
+                        }
+                    }
+                },
+                statusCode: 200
+            });
+
+            return scm.getCommitSha({
+                scmUri,
+                token,
+                prNum: 1
+            }).then((sha) => {
+                assert.calledWith(requestMock, prExpectedOptions);
+                assert.deepEqual(sha, 'hashValue');
+            });
+        });
 
         it('rejects if status code is not 200', () => {
             fakeResponse = {
@@ -1524,6 +1560,53 @@ describe('index', function () {
                     name: 'PR-1',
                     ref: 'testbranch'
                 }]);
+            }
+            );
+        });
+    });
+
+    describe('_getPrInfo', () => {
+        const oauthToken = 'oauthToken';
+        const scmUri = 'hostName:repoId:branchName';
+        const prNum = 1;
+        const expectedOptions = {
+            url: `${API_URL_V2}/repositories/repoId/pullrequests/${prNum}`,
+            method: 'GET',
+            json: true,
+            auth: {
+                bearer: oauthToken
+            }
+        };
+
+        it('returns response of expected format from Bitbucket', () => {
+            requestMock.yieldsAsync(null, {
+                body: {
+                    id: 1,
+                    source: {
+                        branch: {
+                            name: 'testbranch'
+                        },
+                        commit: {
+                            hash: 'hashValue'
+                        }
+                    }
+                },
+                statusCode: 200
+            });
+
+            // eslint-disable-next-line no-underscore-dangle
+            return scm._getPrInfo({
+                scmUri,
+                token: oauthToken,
+                prNum
+            })
+            .then((response) => {
+                assert.calledWith(requestMock, expectedOptions);
+                assert.deepEqual(response, {
+                    name: 'PR-1',
+                    ref: 'testbranch',
+                    sha: 'hashValue'
+                });
             }
             );
         });
