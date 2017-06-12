@@ -1073,18 +1073,6 @@ describe('index', function () {
             })
         );
 
-        it('successfully update status with correct values', () => {
-            config.buildStatus = 'ABORTED';
-            delete config.jobName;
-
-            expectedOptions.body.state = 'STOPPED';
-            expectedOptions.body.description = 'Screwdriver/123';
-
-            return scm.updateCommitStatus(config).then(() => {
-                assert.calledWith(requestMock, expectedOptions);
-            });
-        });
-
         it('rejects if status code is not 201 or 200', () => {
             fakeResponse = {
                 statusCode: 401,

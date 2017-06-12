@@ -572,18 +572,15 @@ class BitbucketScm extends Scm {
      * @param  {String}   config.buildStatus  The screwdriver build status to translate into scm commit status
      * @param  {String}   config.token        The token used to authenticate to the SCM
      * @param  {String}   config.url          Target Url of this commit status
-     * @param  {String}   [config.jobName]    Optional name of the job that finished
-     * @param  {Number}   [config.pipelineId] Pipeline ID
+     * @param  {String}   config.jobName      Optional name of the job that finished
+     * @param  {Number}   config.pipelineId   Pipeline ID
      * @return {Promise}
      */
     _updateCommitStatus(config) {
-        let context = `Screwdriver/${config.pipelineId}`;
         const scm = getScmUriParts(config.scmUri);
-        const jobName = config.jobName && /^PR/.test(config.jobName) ? 'PR' : config.jobName;
+        let context = `Screwdriver/${config.pipelineId}/`;
 
-        if (jobName) {
-            context += `/${jobName}`;
-        }
+        context += /^PR/.test(config.jobName) ? 'PR' : config.jobName;
 
         const options = {
             url: `${REPO_URL}/${scm.repoId}/commit/${config.sha}/statuses/build`,
