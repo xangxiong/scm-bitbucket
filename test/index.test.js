@@ -1034,7 +1034,8 @@ describe('index', function () {
                 buildStatus: 'SUCCESS',
                 token: 'bearerToken',
                 url: 'http://valid.url',
-                jobName: 'main'
+                jobName: 'main',
+                pipelineId: 123
             };
             apiUrl = `${API_URL_V2}/repositories/repoId/commit/${config.sha}/statuses/build`;
             fakeResponse = {
@@ -1048,7 +1049,7 @@ describe('index', function () {
                     url: config.url,
                     state: 'SUCCESSFUL',
                     key: config.sha,
-                    description: 'Screwdriver/main'
+                    description: 'Screwdriver/123/main'
                 },
                 auth: {
                     bearer: 'bearerToken'     // Decoded access token
@@ -1057,23 +1058,20 @@ describe('index', function () {
             requestMock.yieldsAsync(null, fakeResponse);
         });
 
-        it('successfully update status', () =>
-            scm.updateCommitStatus(config).then(() => {
-                assert.calledWith(requestMock, expectedOptions);
-            })
-        );
-
-        it('successfully update status with correct values', () => {
-            config.buildStatus = 'ABORTED';
-            delete config.jobName;
-
-            expectedOptions.body.state = 'STOPPED';
-            expectedOptions.body.description = 'Screwdriver';
+        it('successfully update status for PR', () => {
+            config.jobName = 'PR-1';
+            expectedOptions.body.description = 'Screwdriver/123/PR';
 
             return scm.updateCommitStatus(config).then(() => {
                 assert.calledWith(requestMock, expectedOptions);
             });
         });
+
+        it('successfully update status', () =>
+            scm.updateCommitStatus(config).then(() => {
+                assert.calledWith(requestMock, expectedOptions);
+            })
+        );
 
         it('rejects if status code is not 201 or 200', () => {
             fakeResponse = {
