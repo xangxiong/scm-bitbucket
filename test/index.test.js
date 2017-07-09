@@ -314,6 +314,7 @@ describe('index', function () {
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git',
                 branch: 'stuff',
                 sha: '9ff49b2d1437567cad2b5fed7a0706472131e927',
+                lastCommitMessage: 'testpayload\n',
                 hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
             };
             const headers = {
