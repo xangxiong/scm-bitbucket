@@ -296,6 +296,8 @@ class BitbucketScm extends Scm {
                 + `@${link.hostname}${link.pathname}.git`;
             parsed.branch = hoek.reach(changes[0], 'new.name');
             parsed.sha = hoek.reach(changes[0], 'new.target.hash');
+            parsed.lastCommitMessage = hoek.reach(changes[0], 'new.target.message',
+                { default: '' });
 
             return Promise.resolve(parsed);
         }
