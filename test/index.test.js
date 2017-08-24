@@ -219,6 +219,20 @@ describe('index', function () {
                     assert.match(error.message, 'STATUS CODE 500');
                 });
         });
+
+        it('rejects when passed checkoutUrl of another host', () => {
+            const expectedError =
+                new Error('This checkoutUrl is not supported for your current login host.');
+
+            return scm.parseUrl({
+                checkoutUrl: 'git@bitbucket.corp.jp:batman/test.git#master',
+                token
+            })
+            .then(() => assert.fail('Should not get here'))
+            .catch((error) => {
+                assert.match(error.message, expectedError.message);
+            });
+        });
     });
 
     describe('parseHook', () => {
@@ -232,7 +246,8 @@ describe('index', function () {
                 sha: '40171b678527',
                 prNum: 3,
                 prRef: 'mynewbranch',
-                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e',
+                scmContext: 'bitbucket:bitbucket.org'
             };
             const headers = {
                 'x-event-key': 'pullrequest:created',
@@ -253,7 +268,8 @@ describe('index', function () {
                 sha: 'caeae8cd5fc9',
                 prNum: 7,
                 prRef: 'prbranch',
-                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e',
+                scmContext: 'bitbucket:bitbucket.org'
             };
             const headers = {
                 'x-event-key': 'pullrequest:updated',
@@ -274,7 +290,8 @@ describe('index', function () {
                 sha: '40171b678527',
                 prNum: 3,
                 prRef: 'mynewbranch',
-                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e',
+                scmContext: 'bitbucket:bitbucket.org'
             };
             const headers = {
                 'x-event-key': 'pullrequest:fullfilled',
@@ -295,7 +312,8 @@ describe('index', function () {
                 sha: '40171b678527',
                 prNum: 3,
                 prRef: 'mynewbranch',
-                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e',
+                scmContext: 'bitbucket:bitbucket.org'
             };
             const headers = {
                 'x-event-key': 'pullrequest:rejected',
@@ -315,7 +333,8 @@ describe('index', function () {
                 branch: 'stuff',
                 sha: '9ff49b2d1437567cad2b5fed7a0706472131e927',
                 lastCommitMessage: 'testpayload\n',
-                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+                hookId: '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e',
+                scmContext: 'bitbucket:bitbucket.org'
             };
             const headers = {
                 'x-event-key': 'repo:push',
@@ -1112,11 +1131,14 @@ describe('index', function () {
         it('resolves a default configuration', () =>
             scm.getBellConfiguration().then((config) => {
                 assert.deepEqual(config, {
-                    clientId: 'myclientid',
-                    clientSecret: 'myclientsecret',
-                    forceHttps: false,
-                    isSecure: false,
-                    provider: 'bitbucket'
+                    'bitbucket:bitbucket.org': {
+                        clientId: 'myclientid',
+                        clientSecret: 'myclientsecret',
+                        forceHttps: false,
+                        isSecure: false,
+                        provider: 'bitbucket',
+                        cookie: 'bitbucket-bitbucket.org'
+                    }
                 });
             })
         );
@@ -1163,16 +1185,18 @@ describe('index', function () {
     describe('stats', () => {
         it('returns the correct stats', () => {
             assert.deepEqual(scm.stats(), {
-                requests: {
-                    total: 0,
-                    timeouts: 0,
-                    success: 0,
-                    failure: 0,
-                    concurrent: 0,
-                    averageTime: 0
-                },
-                breaker: {
-                    isClosed: true
+                'bitbucket:bitbucket.org': {
+                    requests: {
+                        total: 0,
+                        timeouts: 0,
+                        success: 0,
+                        failure: 0,
+                        concurrent: 0,
+                        averageTime: 0
+                    },
+                    breaker: {
+                        isClosed: true
+                    }
                 }
             });
         });
@@ -1608,6 +1632,81 @@ describe('index', function () {
                 });
             }
             );
+        });
+    });
+
+    describe('getScmContexts', () => {
+        it('returns a default scmContext', () => {
+            const result = scm.getScmContexts();
+
+            return assert.deepEqual(result, ['bitbucket:bitbucket.org']);
+        });
+    });
+
+    describe('canHandleWebhook', () => {
+        let headers;
+
+        beforeEach(() => {
+            headers = {
+                'x-request-uuid': '1e8d4e8e-5fcf-4624-b091-b10bd6ecaf5e'
+            };
+        });
+
+        it('returns a true for a opened PR.', () => {
+            headers['x-event-key'] = 'pullrequest:created';
+
+            return scm.canHandleWebhook(headers, testPayloadOpen).then((result) => {
+                assert.strictEqual(result, true);
+            });
+        });
+
+        it('returns a true for a sync PR (ammending commit).', () => {
+            headers['x-event-key'] = 'pullrequest:updated';
+
+            return scm.canHandleWebhook(headers, testPayloadSync).then((result) => {
+                assert.isTrue(result);
+            });
+        });
+
+        it('returns a true for closed PR after merged.', () => {
+            headers['x-event-key'] = 'pullrequest:fullfilled';
+
+            return scm.canHandleWebhook(headers, testPayloadClose).then((result) => {
+                assert.isTrue(result);
+            });
+        });
+
+        it('returns a true for closed PR after declined.', () => {
+            headers['x-event-key'] = 'pullrequest:rejected';
+
+            return scm.canHandleWebhook(headers, testPayloadClose).then((result) => {
+                assert.isTrue(result);
+            });
+        });
+
+        it('returns a true for a push event payload.', () => {
+            headers['x-event-key'] = 'repo:push';
+
+            return scm.canHandleWebhook(headers, testPayloadPush).then((result) => {
+                assert.isTrue(result);
+            });
+        });
+
+        it('returns a false when _parseHook() returns null.', () => {
+            headers['x-event-key'] = 'issue:created';
+
+            return scm.canHandleWebhook(headers, testPayloadPush).then((result) => {
+                assert.isFalse(result);
+            });
+        });
+
+        it('returns a false when checkoutUrl dose not match scmContext.', () => {
+            headers['x-event-key'] = 'repo:push';
+            testPayloadPush.repository.links.html.href = 'https://github.com/batman/test';
+
+            return scm.canHandleWebhook(headers, testPayloadPush).then((result) => {
+                assert.isFalse(result);
+            });
         });
     });
 });

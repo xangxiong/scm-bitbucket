@@ -111,6 +111,10 @@ class BitbucketScm extends Scm {
         }).unknown(true), 'Invalid config for Bitbucket');
 
         this.breaker = new Fusebox(request, this.config.fusebox);
+
+        // TODO: set fixed value temporarily.
+        // need to change if the other bitbucket host is supported.
+        this.hostname = 'bitbucket.org';
     }
 
     /**
@@ -251,6 +255,11 @@ class BitbucketScm extends Scm {
             }
         };
 
+        if (repoInfo.hostname !== this.hostname) {
+            throw new Error(
+                'This checkoutUrl is not supported for your current login host.');
+        }
+
         return this.breaker.runCommand(options)
             .then((response) => {
                 if (response.statusCode === 404) {
@@ -278,8 +287,10 @@ class BitbucketScm extends Scm {
         const [typeHeader, actionHeader] = headers['x-event-key'].split(':');
         const parsed = {};
         const repoOwner = hoek.reach(payload, 'repository.owner.username');
+        const scmContexts = this._getScmContexts();
 
         parsed.hookId = headers['x-request-uuid'];
+        parsed.scmContext = scmContexts[0];
 
         switch (typeHeader) {
         case 'repo': {
@@ -616,12 +627,19 @@ class BitbucketScm extends Scm {
     * @return {Promise}
     */
     _getBellConfiguration() {
+        const scmContexts = this._getScmContexts();
+        const scmContext = scmContexts[0];
+        const cookie = `bitbucket-${this.hostname}`;
+
         return Promise.resolve({
-            provider: 'bitbucket',
-            clientId: this.config.oauthClientId,
-            clientSecret: this.config.oauthClientSecret,
-            isSecure: this.config.https,
-            forceHttps: this.config.https
+            [scmContext]: {
+                provider: 'bitbucket',
+                cookie,
+                clientId: this.config.oauthClientId,
+                clientSecret: this.config.oauthClientSecret,
+                isSecure: this.config.https,
+                forceHttps: this.config.https
+            }
         });
     }
 
@@ -738,9 +756,44 @@ class BitbucketScm extends Scm {
      * @param  {Response}    Object          Object containing stats for the scm
      */
     stats() {
-        return this.breaker.stats();
+        const scmContexts = this._getScmContexts();
+        const scmContext = scmContexts[0];
+        const stats = this.breaker.stats();
+
+        return { [scmContext]: stats };
     }
 
+   /**
+    * Get an array of scm context (e.g. bitbucket:bitbucket.org)
+    * @method getScmContexts
+    * @return {Array}
+    */
+    _getScmContexts() {
+        const contextName = [`bitbucket:${this.hostname}`];
+
+        return contextName;
+    }
+
+   /**
+    * Determine if a scm module can handle the received webhook
+    * @method canHandleWebhook
+    * @param {Object}    headers     The request headers associated with the webhook payload
+    * @param {Object}    payload     The webhook payload received from the SCM service
+    * @return {Promise}
+    * */
+    _canHandleWebhook(headers, payload) {
+        return this._parseHook(headers, payload).then((parseResult) => {
+            if (parseResult === null) {
+                return Promise.resolve(false);
+            }
+
+            const [, checkoutUrlHost] = parseResult.checkoutUrl.split('@');
+
+            return Promise.resolve(checkoutUrlHost.startsWith(this.hostname));
+        }).catch(() => (
+            Promise.resolve(false)
+        ));
+    }
 }
 
 module.exports = BitbucketScm;
