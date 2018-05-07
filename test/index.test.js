@@ -747,6 +747,11 @@ describe('index', function () {
 
             requestMock.yieldsAsync(null, {
                 body: {
+                    links: {
+                        html: {
+                            href: 'https://bitbucket.org/2.0/repositories/repoId/pullrequests/1'
+                        }
+                    },
                     id: 1,
                     source: {
                         branch: {
@@ -1614,6 +1619,11 @@ describe('index', function () {
         it('returns response of expected format from Bitbucket', () => {
             requestMock.yieldsAsync(null, {
                 body: {
+                    links: {
+                        html: {
+                            href: 'https://api.bitbucket.org/2.0/repositories/repoId/pullrequests/1'
+                        }
+                    },
                     id: 1,
                     source: {
                         branch: {
@@ -1638,7 +1648,8 @@ describe('index', function () {
                     assert.deepEqual(response, {
                         name: 'PR-1',
                         ref: 'testbranch',
-                        sha: 'hashValue'
+                        sha: 'hashValue',
+                        url: 'https://api.bitbucket.org/2.0/repositories/repoId/pullrequests/1'
                     });
                 });
         });
