@@ -50,6 +50,6 @@
     "joi": "^13.0.0",
     "request": "^2.75.0",
     "screwdriver-data-schema": "^18.13.4",
-    "screwdriver-scm-base": "^4.0.1"
+    "screwdriver-scm-base": "^4.0.5"
   }
 }
