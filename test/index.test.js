@@ -7,6 +7,7 @@ const testCommands = require('./data/commands.json');
 const testPrCommands = require('./data/prCommands.json');
 const testCustomPrCommands = require('./data/customPrCommands.json');
 const testCommitBranchCommands = require('./data/commitBranchCommands.json');
+const testChildCommands = require('./data/childCommands.json');
 const testPayloadOpen = require('./data/pr.opened.json');
 const testPayloadSync = require('./data/pr.sync.json');
 const testPayloadClose = require('./data/pr.closed.json');
@@ -1162,13 +1163,17 @@ describe('index', function () {
     });
 
     describe('getCheckoutCommand', () => {
-        const config = {
-            branch: 'branchName',
-            host: 'hostName',
-            org: 'orgName',
-            repo: 'repoName',
-            sha: 'shaValue'
-        };
+        let config;
+
+        beforeEach(() => {
+            config = {
+                branch: 'branchName',
+                host: 'hostName',
+                org: 'orgName',
+                repo: 'repoName',
+                sha: 'shaValue'
+            };
+        });
 
         it('resolves checkout command without prRef', () =>
             scm.getCheckoutCommand(config).then((command) => {
@@ -1185,6 +1190,8 @@ describe('index', function () {
         });
 
         it('resolves checkout command with custom username and email', () => {
+            config.prRef = 'prBranch';
+
             scm = new BitbucketScm({
                 oauthClientId: 'myclientid',
                 oauthClientSecret: 'myclientsecret',
@@ -1200,11 +1207,25 @@ describe('index', function () {
 
         it('resolves checkout command without prRef', () => {
             config.commitBranch = 'commitBranch';
-            config.prRef = undefined;
 
             return scm.getCheckoutCommand(config).then((command) => {
                 assert.deepEqual(command, testCommitBranchCommands);
             });
+        });
+
+        it('promises to get the checkout command for a child pipeline', () => {
+            config.parentConfig = {
+                branch: 'master',
+                host: 'github.com',
+                org: 'screwdriver-cd',
+                repo: 'parent-repo',
+                sha: '54321'
+            };
+
+            return scm.getCheckoutCommand(config)
+                .then((command) => {
+                    assert.deepEqual(command, testChildCommands);
+                });
         });
     });
 
