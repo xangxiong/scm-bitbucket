@@ -52,7 +52,10 @@ function checkResponseError(response) {
         default: JSON.stringify(response.body)
     });
 
-    throw new Error(`${errorMessage} Reason "${errorReason}"`);
+    const error = new Error(`${errorMessage} Reason "${errorReason}"`);
+
+    error.code = response.statusCode;
+    throw error;
 }
 
 /**
@@ -549,16 +552,27 @@ class BitbucketScm extends Scm {
      * @param  {String}   config.token      The token used to authenticate to the SCM
      * @return {Promise}                    Resolves to permissions object with admin, push, pull
      */
-    _getPermissions(config) {
+    async _getPermissions(config) {
         const scm = getScmUriParts(config.scmUri);
-        const getPerm = (repoId, desiredAccess, token) => {
-            const [owner, uuid] = repoId.split('/');
+        const [owner, uuid] = scm.repoId.split('/');
+
+        // First, check to see if the repository exists
+        await this.breaker.runCommand({
+            url: `${API_URL_V2}/repositories/${owner}/${uuid}`,
+            method: 'GET',
+            json: true,
+            auth: {
+                bearer: config.token
+            }
+        }).then(checkResponseError);
+
+        const getPerm = async (desiredAccess) => {
             const options = {
                 url: `${API_URL_V2}/repositories/${owner}`,
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: config.token
                 }
             };
 
@@ -582,9 +596,9 @@ class BitbucketScm extends Scm {
         };
 
         return Promise.all([
-            getPerm(scm.repoId, 'admin', config.token),
-            getPerm(scm.repoId, 'push', config.token),
-            getPerm(scm.repoId, 'pull', config.token)
+            getPerm('admin'),
+            getPerm('push'),
+            getPerm('pull')
         ]).then(([admin, push, pull]) => ({
             admin,
             push,
