@@ -1332,7 +1332,7 @@ describe('index', function () {
         });
     });
 
-    describe('_addWebhook', () => {
+    describe.only('_addWebhook', () => {
         const oauthToken = 'oauthToken';
         const scmUri = 'hostName:repoId:branchName';
 
@@ -1356,7 +1356,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token: oauthToken,
-                url: 'url'
+                webhookUrl: 'url'
             })
                 .then(() => {
                     assert.calledWith(requestMock, {
@@ -1411,7 +1411,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token: oauthToken,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
@@ -1479,7 +1479,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token: oauthToken,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
@@ -1538,7 +1538,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
@@ -1558,7 +1558,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
@@ -1593,7 +1593,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, [
                     'Your credentials lack one or more required privilege scopes.',
@@ -1638,7 +1638,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
@@ -1668,7 +1668,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });

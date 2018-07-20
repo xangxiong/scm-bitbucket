@@ -214,10 +214,10 @@ class BitbucketScm extends Scm {
      * is instead updated.
      * @method _addWebhook
      * @param  {Object}    config
-     * @param  {String}    config.scmUri  The SCM URI to add the webhook to
-     * @param  {String}    config.token   Oauth2 token to authenticate with Bitbucket
-     * @param  {String}    config.url     The URL to use for webhook notifications
-     * @return {Promise}                  Resolves upon success
+     * @param  {String}    config.scmUri    The SCM URI to add the webhook to
+     * @param  {String}    config.token     Oauth2 token to authenticate with Bitbucket
+      @param  {String}    config.webhookUrl The URL to use for the webhook notifications
+     * @return {Promise}                    Resolves upon success
      */
     _addWebhook(config) {
         const repoInfo = getScmUriParts(config.scmUri);
@@ -226,14 +226,14 @@ class BitbucketScm extends Scm {
             page: 1,
             repoId: repoInfo.repoId,
             token: config.token,
-            url: config.url
+            url: config.webhookUrl
         })
             .then(hookInfo =>
                 this._createWebhook({
                     hookInfo,
                     repoId: repoInfo.repoId,
                     token: config.token,
-                    url: config.url
+                    url: config.webhookUrl
                 })
             );
     }
