@@ -52,7 +52,10 @@ function checkResponseError(response) {
         default: JSON.stringify(response.body)
     });
 
-    throw new Error(`${errorMessage} Reason "${errorReason}"`);
+    const error = new Error(`${errorMessage} Reason "${errorReason}"`);
+
+    error.code = response.statusCode;
+    throw error;
 }
 
 /**
@@ -211,10 +214,10 @@ class BitbucketScm extends Scm {
      * is instead updated.
      * @method _addWebhook
      * @param  {Object}    config
-     * @param  {String}    config.scmUri  The SCM URI to add the webhook to
-     * @param  {String}    config.token   Oauth2 token to authenticate with Bitbucket
-     * @param  {String}    config.url     The URL to use for webhook notifications
-     * @return {Promise}                  Resolves upon success
+     * @param  {String}    config.scmUri    The SCM URI to add the webhook to
+     * @param  {String}    config.token     Oauth2 token to authenticate with Bitbucket
+      @param  {String}    config.webhookUrl The URL to use for the webhook notifications
+     * @return {Promise}                    Resolves upon success
      */
     _addWebhook(config) {
         const repoInfo = getScmUriParts(config.scmUri);
@@ -223,14 +226,14 @@ class BitbucketScm extends Scm {
             page: 1,
             repoId: repoInfo.repoId,
             token: config.token,
-            url: config.url
+            url: config.webhookUrl
         })
             .then(hookInfo =>
                 this._createWebhook({
                     hookInfo,
                     repoId: repoInfo.repoId,
                     token: config.token,
-                    url: config.url
+                    url: config.webhookUrl
                 })
             );
     }
@@ -549,16 +552,27 @@ class BitbucketScm extends Scm {
      * @param  {String}   config.token      The token used to authenticate to the SCM
      * @return {Promise}                    Resolves to permissions object with admin, push, pull
      */
-    _getPermissions(config) {
+    async _getPermissions(config) {
         const scm = getScmUriParts(config.scmUri);
-        const getPerm = (repoId, desiredAccess, token) => {
-            const [owner, uuid] = repoId.split('/');
+        const [owner, uuid] = scm.repoId.split('/');
+
+        // First, check to see if the repository exists
+        await this.breaker.runCommand({
+            url: `${API_URL_V2}/repositories/${owner}/${uuid}`,
+            method: 'GET',
+            json: true,
+            auth: {
+                bearer: config.token
+            }
+        }).then(checkResponseError);
+
+        const getPerm = async (desiredAccess) => {
             const options = {
                 url: `${API_URL_V2}/repositories/${owner}`,
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: config.token
                 }
             };
 
@@ -582,9 +596,9 @@ class BitbucketScm extends Scm {
         };
 
         return Promise.all([
-            getPerm(scm.repoId, 'admin', config.token),
-            getPerm(scm.repoId, 'push', config.token),
-            getPerm(scm.repoId, 'pull', config.token)
+            getPerm('admin'),
+            getPerm('push'),
+            getPerm('pull')
         ]).then(([admin, push, pull]) => ({
             admin,
             push,

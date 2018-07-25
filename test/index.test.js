@@ -892,6 +892,49 @@ describe('index', function () {
     });
 
     describe('getPermissions', () => {
+        const repos = [
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix/repoIdSuffix`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix/repoIdSuffix1`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix/repoIdSuffix2`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix/repoIdSuffix3`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix/fake`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            }
+        ];
+
         const pull = {
             url: `${API_URL_V2}/repositories/repoIdPrefix`,
             method: 'GET',
@@ -916,6 +959,16 @@ describe('index', function () {
                 bearer: token
             }
         };
+
+        const repoResponse = {
+            statusCode: 200,
+            body: {}
+        };
+        const repoNotFoundResponse = {
+            statusCode: 404,
+            body: 'Not found'
+        };
+
         const readResponse = {
             statusCode: 200,
             body: {
@@ -945,6 +998,13 @@ describe('index', function () {
         };
 
         beforeEach(() => {
+            requestMock.withArgs(repos[0]).yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(repos[1]).yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(repos[2]).yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(repos[3]).yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(repos[4]).yieldsAsync(null,
+                repoNotFoundResponse, repoNotFoundResponse.body);
+
             requestMock.withArgs(pull).yieldsAsync(null, readResponse, readResponse.body);
             requestMock.withArgs(push).yieldsAsync(null, writeResponse, writeResponse.body);
             requestMock.withArgs(admin).yieldsAsync(null, adminResponse, adminResponse.body);
@@ -957,7 +1017,8 @@ describe('index', function () {
                 scmUri,
                 token
             }).then((permissions) => {
-                assert.calledThrice(requestMock);
+                assert.callCount(requestMock, 4);
+                assert.calledWith(requestMock, repos[1]);
                 assert.calledWith(requestMock, pull);
                 assert.calledWith(requestMock, push);
                 assert.calledWith(requestMock, admin);
@@ -976,7 +1037,8 @@ describe('index', function () {
                 scmUri,
                 token
             }).then((permissions) => {
-                assert.calledThrice(requestMock);
+                assert.callCount(requestMock, 4);
+                assert.calledWith(requestMock, repos[2]);
                 assert.calledWith(requestMock, pull);
                 assert.calledWith(requestMock, push);
                 assert.calledWith(requestMock, admin);
@@ -995,6 +1057,11 @@ describe('index', function () {
                 scmUri,
                 token
             }).then((permissions) => {
+                assert.callCount(requestMock, 4);
+                assert.calledWith(requestMock, repos[3]);
+                assert.calledWith(requestMock, pull);
+                assert.calledWith(requestMock, push);
+                assert.calledWith(requestMock, admin);
                 assert.deepEqual(permissions, {
                     admin: false,
                     push: false,
@@ -1055,6 +1122,22 @@ describe('index', function () {
                 assert.fail('Should not get here');
             }).catch((err) => {
                 assert.equal(error, err);
+            });
+        });
+
+        it('rejects if the repository does not exist', () => {
+            const error = new Error('Not found');
+            const scmUri = 'hostName:repoIdPrefix/fake:branchName';
+
+            error.code = 404;
+
+            return scm.getPermissions({
+                scmUri,
+                token
+            }).then(() => {
+                assert.fail('Should not get here');
+            }).catch((err) => {
+                assert.deepEqual(error, err);
             });
         });
     });
@@ -1249,7 +1332,7 @@ describe('index', function () {
         });
     });
 
-    describe('_addWebhook', () => {
+    describe.only('_addWebhook', () => {
         const oauthToken = 'oauthToken';
         const scmUri = 'hostName:repoId:branchName';
 
@@ -1273,7 +1356,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token: oauthToken,
-                url: 'url'
+                webhookUrl: 'url'
             })
                 .then(() => {
                     assert.calledWith(requestMock, {
@@ -1328,7 +1411,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token: oauthToken,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
@@ -1396,7 +1479,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token: oauthToken,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(() => {
                 assert.calledWith(requestMock, {
                     json: true,
@@ -1455,7 +1538,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
@@ -1475,7 +1558,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
@@ -1510,7 +1593,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, [
                     'Your credentials lack one or more required privilege scopes.',
@@ -1555,7 +1638,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
@@ -1585,7 +1668,7 @@ describe('index', function () {
             /* eslint-enable no-underscore-dangle */
                 scmUri,
                 token,
-                url: 'url'
+                webhookUrl: 'url'
             }).then(assert.fail, (err) => {
                 assert.strictEqual(err.message, expectedMessage);
             });
