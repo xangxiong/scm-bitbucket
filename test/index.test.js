@@ -1288,7 +1288,7 @@ describe('index', function () {
                 });
         });
 
-        it('resolves checkout command without prRef', () => {
+        it('resolves checkout command with commit branch', () => {
             config.commitBranch = 'commitBranch';
 
             return scm.getCheckoutCommand(config).then((command) => {
@@ -1332,7 +1332,7 @@ describe('index', function () {
         });
     });
 
-    describe.only('_addWebhook', () => {
+    describe('_addWebhook', () => {
         const oauthToken = 'oauthToken';
         const scmUri = 'hostName:repoId:branchName';
 

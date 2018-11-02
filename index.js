@@ -716,9 +716,13 @@ class BitbucketScm extends Scm {
 
             // Git clone
             command.push(`echo Cloning external config repo ${parentCheckoutUrl}`);
-            command.push(`${gitWrapper} `
-                  + `"git clone --quiet --progress --branch ${parentBranch} `
-                  + '$CONFIG_URL $SD_CONFIG_DIR"');
+            command.push('if [ ! -z $GIT_SHALLOW_CLONE ] && [ $GIT_SHALLOW_CLONE = false ]; '
+                  + `then ${gitWrapper} `
+                  + `"git clone --recursive --quiet --progress --branch ${parentBranch} `
+                  + '$CONFIG_URL $SD_CONFIG_DIR"; '
+                  + `else ${gitWrapper} `
+                  + `"git clone --depth=50 --recursive --quiet --progress --branch ${parentBranch} `
+                  + '$CONFIG_URL $SD_CONFIG_DIR"; fi');
 
             // Reset to SHA
             command.push(`${gitWrapper} "git -C $SD_CONFIG_DIR reset --hard `
@@ -734,8 +738,13 @@ class BitbucketScm extends Scm {
             `then export SCM_URL=https://$SCM_USERNAME:$SCM_ACCESS_TOKEN@${checkoutUrl}; ` +
             `else export SCM_URL=https://${checkoutUrl}; fi`
         );
-        command.push(`${gitWrapper} `
-            + `"git clone --quiet --progress --branch ${branch} $SCM_URL $SD_SOURCE_DIR"`);
+        command.push('if [ ! -z $GIT_SHALLOW_CLONE ] && [ $GIT_SHALLOW_CLONE = false ]; '
+              + `then ${gitWrapper} `
+              + `"git clone --recursive --quiet --progress --branch ${branch} `
+              + '$SCM_URL $SD_SOURCE_DIR"; '
+              + `else ${gitWrapper} `
+              + `"git clone --depth=50 --recursive --quiet --progress --branch ${branch} `
+              + '$SCM_URL $SD_SOURCE_DIR"; fi');
         // Reset to Sha
         command.push(`echo Reset to SHA ${checkoutRef}`);
         command.push(`${gitWrapper} "git reset --hard ${checkoutRef}"`);
