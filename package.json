@@ -36,20 +36,19 @@
     }
   },
   "devDependencies": {
-    "chai": "^3.5.0",
+    "chai": "^4.2.0",
     "eslint": "^4.6.0",
-    "eslint-config-screwdriver": "^3.0.0",
-    "jenkins-mocha": "^4.0.0",
+    "eslint-config-screwdriver": "^3.0.1",
+    "jenkins-mocha": "^6.0.0",
     "mockery": "^2.0.0",
-    "sinon": "^1.17.6",
-    "sinon-as-promised": "^4.0.2"
+    "sinon": "^4.5.0"
   },
   "dependencies": {
     "circuit-fuses": "^2.1.0",
-    "hoek": "^5.0.3",
-    "joi": "^13.0.0",
-    "request": "^2.75.0",
-    "screwdriver-data-schema": "^18.13.4",
+    "hoek": "^5.0.4",
+    "joi": "^13.7.0",
+    "request": "^2.88.0",
+    "screwdriver-data-schema": "^18.38.0",
     "screwdriver-scm-base": "^4.0.5"
   }
 }
