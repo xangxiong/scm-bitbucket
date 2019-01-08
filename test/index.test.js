@@ -16,7 +16,6 @@ const token = 'myAccessToken';
 const API_URL_V1 = 'https://api.bitbucket.org/1.0';
 const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 
-require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('index', function () {
@@ -1137,7 +1136,7 @@ describe('index', function () {
             }).then(() => {
                 assert.fail('Should not get here');
             }).catch((err) => {
-                assert.deepEqual(error, err);
+                assert.equal(err.message, err.message);
             });
         });
     });
