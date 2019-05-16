@@ -568,7 +568,7 @@ class BitbucketScm extends Scm {
 
         const getPerm = async (desiredAccess) => {
             const options = {
-                url: `${API_URL_V2}/repositories/${owner}/${uuid}`,
+                url: `${API_URL_V2}/repositories/${owner}?q=uuid%3D%22${uuid}%22`,
                 method: 'GET',
                 json: true,
                 auth: {
@@ -577,9 +577,9 @@ class BitbucketScm extends Scm {
             };
 
             if (desiredAccess === 'admin') {
-                options.url = `${options.url}?role=admin`;
+                options.url = `${options.url}&role=admin`;
             } else if (desiredAccess === 'push') {
-                options.url = `${options.url}?role=contributor`;
+                options.url = `${options.url}&role=contributor`;
             } else {
                 options.url = `${options.url}`;
             }
@@ -591,7 +591,7 @@ class BitbucketScm extends Scm {
                             `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                     }
 
-                    return response.body.uuid === uuid;
+                    return response.body.values.some(r => r.uuid === uuid);
                 });
         };
 
