@@ -568,7 +568,7 @@ class BitbucketScm extends Scm {
 
         const getPerm = async (desiredAccess) => {
             const options = {
-                url: `${API_URL_V2}/repositories/${owner}`,
+                url: `${API_URL_V2}/repositories/${owner}/${uuid}`,
                 method: 'GET',
                 json: true,
                 auth: {
@@ -591,7 +591,7 @@ class BitbucketScm extends Scm {
                             `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                     }
 
-                    return response.body.values.some(r => r.uuid === uuid);
+                    return response.body.uuid === uuid;
                 });
         };
 
