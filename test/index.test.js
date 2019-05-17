@@ -935,29 +935,128 @@ describe('index', function () {
         ];
 
         const pull = {
-            url: `${API_URL_V2}/repositories/repoIdPrefix`,
+            url: `${API_URL_V2}/repositories/repoIdPrefix`
+                    + '?q=uuid%3D%22repoIdSuffix%22',
             method: 'GET',
             json: true,
             auth: {
                 bearer: token
             }
         };
-        const push = {
-            url: `${API_URL_V2}/repositories/repoIdPrefix?role=contributor`,
-            method: 'GET',
-            json: true,
-            auth: {
-                bearer: token
+        const pulls = [
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix%22',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix1%22',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix2%22',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix3%22',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
             }
-        };
-        const admin = {
-            url: `${API_URL_V2}/repositories/repoIdPrefix?role=admin`,
-            method: 'GET',
-            json: true,
-            auth: {
-                bearer: token
+        ];
+        const pushes = [
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix%22&role=contributor',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix1%22&role=contributor',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix2%22&role=contributor',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix3%22&role=contributor',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
             }
-        };
+        ];
+        const admins = [
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix%22&role=admin',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix1%22&role=admin',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix2%22&role=admin',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            },
+            {
+                url: `${API_URL_V2}/repositories/repoIdPrefix`
+                        + '?q=uuid%3D%22repoIdSuffix3%22&role=admin',
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: token
+                }
+            }
+        ];
 
         const repoResponse = {
             statusCode: 200,
@@ -968,25 +1067,50 @@ describe('index', function () {
             body: 'Not found'
         };
 
-        const readResponse = {
-            statusCode: 200,
-            body: {
-                values: [
-                    { uuid: 'repoIdSuffix1' },
-                    { uuid: 'repoIdSuffix2' },
-                    { uuid: 'repoIdSuffix3' }
-                ]
+        const readResponses = [
+            {
+                statusCode: 200,
+                body: {
+                    values: [
+                        { uuid: 'repoIdSuffix1' }
+                    ]
+                }
+            },
+            {
+                statusCode: 200,
+                body: {
+                    values: [
+                        { uuid: 'repoIdSuffix2' }
+                    ]
+                }
+            },
+            {
+                statusCode: 200,
+                body: {
+                    values: [
+                        { uuid: 'repoIdSuffix3' }
+                    ]
+                }
             }
-        };
-        const writeResponse = {
-            statusCode: 200,
-            body: {
-                values: [
-                    { uuid: 'repoIdSuffix1' },
-                    { uuid: 'repoIdSuffix2' }
-                ]
+        ];
+        const writeResponses = [
+            {
+                statusCode: 200,
+                body: {
+                    values: [
+                        { uuid: 'repoIdSuffix1' }
+                    ]
+                }
+            },
+            {
+                statusCode: 200,
+                body: {
+                    values: [
+                        { uuid: 'repoIdSuffix2' }
+                    ]
+                }
             }
-        };
+        ];
         const adminResponse = {
             statusCode: 200,
             body: {
@@ -1004,9 +1128,32 @@ describe('index', function () {
             requestMock.withArgs(repos[4]).yieldsAsync(null,
                 repoNotFoundResponse, repoNotFoundResponse.body);
 
-            requestMock.withArgs(pull).yieldsAsync(null, readResponse, readResponse.body);
-            requestMock.withArgs(push).yieldsAsync(null, writeResponse, writeResponse.body);
-            requestMock.withArgs(admin).yieldsAsync(null, adminResponse, adminResponse.body);
+            requestMock.withArgs(pulls[0])
+                .yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(pulls[1])
+                .yieldsAsync(null, readResponses[0], readResponses[0].body);
+            requestMock.withArgs(pulls[2])
+                .yieldsAsync(null, readResponses[1], readResponses[1].body);
+            requestMock.withArgs(pulls[3])
+                .yieldsAsync(null, readResponses[2], readResponses[2].body);
+
+            requestMock.withArgs(pushes[0])
+                .yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(pushes[1])
+                .yieldsAsync(null, writeResponses[0], writeResponses[0].body);
+            requestMock.withArgs(pushes[2])
+                .yieldsAsync(null, writeResponses[1], writeResponses[1].body);
+            requestMock.withArgs(pushes[3])
+                .yieldsAsync(null, repoResponse, repoResponse.body);
+
+            requestMock.withArgs(admins[0])
+                .yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(admins[1])
+                .yieldsAsync(null, adminResponse, adminResponse.body);
+            requestMock.withArgs(admins[2])
+                .yieldsAsync(null, repoResponse, repoResponse.body);
+            requestMock.withArgs(admins[3])
+                .yieldsAsync(null, repoResponse, repoResponse.body);
         });
 
         it('get correct admin permissions', () => {
@@ -1018,9 +1165,9 @@ describe('index', function () {
             }).then((permissions) => {
                 assert.callCount(requestMock, 4);
                 assert.calledWith(requestMock, repos[1]);
-                assert.calledWith(requestMock, pull);
-                assert.calledWith(requestMock, push);
-                assert.calledWith(requestMock, admin);
+                assert.calledWith(requestMock, pulls[1]);
+                assert.calledWith(requestMock, pushes[1]);
+                assert.calledWith(requestMock, admins[1]);
                 assert.deepEqual(permissions, {
                     admin: true,
                     push: true,
@@ -1038,9 +1185,9 @@ describe('index', function () {
             }).then((permissions) => {
                 assert.callCount(requestMock, 4);
                 assert.calledWith(requestMock, repos[2]);
-                assert.calledWith(requestMock, pull);
-                assert.calledWith(requestMock, push);
-                assert.calledWith(requestMock, admin);
+                assert.calledWith(requestMock, pulls[2]);
+                assert.calledWith(requestMock, pushes[2]);
+                assert.calledWith(requestMock, admins[2]);
                 assert.deepEqual(permissions, {
                     admin: false,
                     push: true,
@@ -1058,9 +1205,9 @@ describe('index', function () {
             }).then((permissions) => {
                 assert.callCount(requestMock, 4);
                 assert.calledWith(requestMock, repos[3]);
-                assert.calledWith(requestMock, pull);
-                assert.calledWith(requestMock, push);
-                assert.calledWith(requestMock, admin);
+                assert.calledWith(requestMock, pulls[3]);
+                assert.calledWith(requestMock, pushes[3]);
+                assert.calledWith(requestMock, admins[3]);
                 assert.deepEqual(permissions, {
                     admin: false,
                     push: false,

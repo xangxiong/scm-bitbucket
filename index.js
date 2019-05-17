@@ -591,7 +591,11 @@ class BitbucketScm extends Scm {
                             `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                     }
 
-                    return response.body.values.some(r => r.uuid === uuid);
+                    if (response.body.values) {
+                        return response.body.values.some(r => r.uuid === uuid);
+                    }
+
+                    return false;
                 });
         };
 
