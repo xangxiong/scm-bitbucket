@@ -830,7 +830,8 @@ class BitbucketScm extends Scm {
                 name: `PR-${pr.id}`,
                 ref: pr.source.branch.name,
                 sha: pr.source.commit.hash,
-                url: pr.links.html.href
+                url: pr.links.html.href,
+                baseBranch: pr.source.branch.name
             };
         });
     }

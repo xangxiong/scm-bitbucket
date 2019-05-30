@@ -1909,7 +1909,8 @@ describe('index', function () {
                         name: 'PR-1',
                         ref: 'testbranch',
                         sha: 'hashValue',
-                        url: 'https://api.bitbucket.org/2.0/repositories/repoId/pullrequests/1'
+                        url: 'https://api.bitbucket.org/2.0/repositories/repoId/pullrequests/1',
+                        baseBranch: 'testbranch'
                     });
                 });
         });
