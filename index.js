@@ -539,7 +539,7 @@ class BitbucketScm extends Scm {
                         `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
 
-                return response.body.data;
+                return response.body;
             });
     }
 

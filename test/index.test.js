@@ -835,12 +835,7 @@ describe('index', function () {
         beforeEach(() => {
             fakeResponse = {
                 statusCode: 200,
-                body: {
-                    node: 'nodeValue',
-                    path: 'path/to/file.txt',
-                    data: 'dataValue',
-                    size: 14
-                }
+                body: 'dataValue'
             };
             requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
         });
