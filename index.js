@@ -290,7 +290,6 @@ class BitbucketScm extends Scm {
     _parseHook(headers, payload) {
         const [typeHeader, actionHeader] = headers['x-event-key'].split(':');
         const parsed = {};
-        const repoOwner = hoek.reach(payload, 'repository.owner.uuid');
         const scmContexts = this._getScmContexts();
 
         parsed.hookId = headers['x-request-uuid'];
@@ -307,8 +306,7 @@ class BitbucketScm extends Scm {
             parsed.type = 'repo';
             parsed.action = 'push';
             parsed.username = hoek.reach(payload, 'actor.uuid');
-            parsed.checkoutUrl = `${link.protocol}//${encodeURIComponent(repoOwner)}`
-                + `@${link.hostname}${link.pathname}.git`;
+            parsed.checkoutUrl = `${link.protocol}//${link.hostname}${link.pathname}.git`;
             parsed.branch = hoek.reach(changes[0], 'new.name');
             parsed.sha = hoek.reach(changes[0], 'new.target.hash');
             parsed.lastCommitMessage = hoek.reach(changes[0], 'new.target.message',
@@ -331,8 +329,7 @@ class BitbucketScm extends Scm {
 
             parsed.type = 'pr';
             parsed.username = hoek.reach(payload, 'actor.uuid');
-            parsed.checkoutUrl = `${link.protocol}//${encodeURIComponent(repoOwner)}`
-                + `@${link.hostname}${link.pathname}.git`;
+            parsed.checkoutUrl = `${link.protocol}//${link.hostname}${link.pathname}.git`;
             parsed.branch = hoek.reach(payload, 'pullrequest.destination.branch.name');
             parsed.sha = hoek.reach(payload, 'pullrequest.source.commit.hash');
             parsed.prNum = hoek.reach(payload, 'pullrequest.id');
@@ -873,7 +870,7 @@ class BitbucketScm extends Scm {
                 return Promise.resolve(false);
             }
 
-            const [, checkoutUrlHost] = parseResult.checkoutUrl.split('@');
+            const [, checkoutUrlHost] = parseResult.checkoutUrl.split('//');
 
             return Promise.resolve(checkoutUrlHost.startsWith(this.hostname));
         }).catch(() => (
