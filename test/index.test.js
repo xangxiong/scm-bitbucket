@@ -2130,7 +2130,7 @@ describe('index', function () {
                         pass: 'myclientsecret'
                     },
                     form: {
-                        graph_type: 'refresh_token',
+                        grant_type: 'refresh_token',
                         refresh_token: 'myRefreshToken2'
                     }
                 });

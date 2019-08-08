@@ -981,7 +981,7 @@ class BitbucketScm extends Scm {
             };
         } else {
             params.form = {
-                graph_type: 'refresh_token',
+                grant_type: 'refresh_token',
                 refresh_token: this.refreshToken
             };
         }
