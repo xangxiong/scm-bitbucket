@@ -12,7 +12,9 @@ const testPayloadOpen = require('./data/pr.opened.json');
 const testPayloadSync = require('./data/pr.sync.json');
 const testPayloadClose = require('./data/pr.closed.json');
 const testPayloadPush = require('./data/repo.push.json');
+const testPayloadAccessToken = require('./data/access.token.json');
 const token = 'myAccessToken';
+const systemToken = 'myAccessToken2';
 const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -34,6 +36,7 @@ describe('index', function () {
 
     beforeEach(() => {
         requestMock = sinon.stub();
+
         mockery.registerMock('request', requestMock);
 
         /* eslint-disable global-require */
@@ -49,6 +52,10 @@ describe('index', function () {
             oauthClientId: 'myclientid',
             oauthClientSecret: 'myclientsecret'
         });
+        // set the system tokens so that the system tokens are not attempted to be loaded
+        scm.token = systemToken;
+        scm.refreshToken = 'myRefreshToken2';
+        scm.expiresIn = (new Date()).getTime() + (7200 * 1000);
     });
 
     afterEach(() => {
@@ -116,7 +123,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: 'myAccessToken'
+                    bearer: systemToken
                 }
             };
             requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
@@ -131,7 +138,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: 'myAccessToken'
+                    bearer: systemToken
                 }
             };
 
@@ -150,7 +157,7 @@ describe('index', function () {
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
-                token: 'myAccessToken'
+                token
             }).then((parsed) => {
                 assert.calledWith(requestMock, expectedOptions);
                 assert.equal(parsed, expected);
@@ -164,7 +171,7 @@ describe('index', function () {
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
-                token: 'myAccessToken'
+                token
             })
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
@@ -188,7 +195,7 @@ describe('index', function () {
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
-                token: 'myAccessToken'
+                token
             })
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
@@ -211,7 +218,7 @@ describe('index', function () {
 
             return scm.parseUrl({
                 checkoutUrl: 'https://batman@bitbucket.org/batman/test.git#mynewbranch',
-                token: 'myAccessToken'
+                token
             })
                 .then(() => assert.fail('Should not get here'))
                 .catch((error) => {
@@ -391,7 +398,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         let fakeResponse;
@@ -481,7 +488,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         let fakeResponse;
@@ -504,7 +511,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             };
             requestMock.withArgs(repoOptions)
@@ -579,7 +586,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         const authorOptions = {
@@ -587,7 +594,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         let fakeResponse;
@@ -705,7 +712,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         let fakeResponse;
@@ -739,7 +746,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             };
 
@@ -827,7 +834,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         let fakeResponse;
@@ -889,7 +896,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -897,7 +904,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -905,7 +912,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -913,7 +920,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -921,7 +928,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             }
         ];
@@ -932,7 +939,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: token
+                bearer: systemToken
             }
         };
         const pulls = [
@@ -942,7 +949,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -951,7 +958,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -960,7 +967,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -969,7 +976,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             }
         ];
@@ -980,7 +987,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -989,7 +996,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -998,7 +1005,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -1007,7 +1014,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             }
         ];
@@ -1018,7 +1025,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -1027,7 +1034,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -1036,7 +1043,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             },
             {
@@ -1045,7 +1052,7 @@ describe('index', function () {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: token
+                    bearer: systemToken
                 }
             }
         ];
@@ -1501,7 +1508,7 @@ describe('index', function () {
                         json: true,
                         method: 'GET',
                         auth: {
-                            bearer: oauthToken
+                            bearer: systemToken
                         },
                         url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=1`
                     });
@@ -1555,7 +1562,7 @@ describe('index', function () {
                     json: true,
                     method: 'GET',
                     auth: {
-                        bearer: oauthToken
+                        bearer: systemToken
                     },
                     url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=1`
                 });
@@ -1623,7 +1630,7 @@ describe('index', function () {
                     json: true,
                     method: 'GET',
                     auth: {
-                        bearer: oauthToken
+                        bearer: systemToken
                     },
                     url: `${API_URL_V2}/repositories/repoId/hooks?pagelen=30&page=2`
                 });
@@ -1821,7 +1828,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: oauthToken
+                bearer: systemToken
             }
         };
 
@@ -1864,7 +1871,7 @@ describe('index', function () {
             method: 'GET',
             json: true,
             auth: {
-                bearer: oauthToken
+                bearer: systemToken
             }
         };
 
@@ -2021,7 +2028,7 @@ describe('index', function () {
                     json: true,
                     method: 'GET',
                     auth: {
-                        bearer: branchListConfig.token
+                        bearer: systemToken
                     },
                     url: `${API_URL_V2}/repositories/repoId/refs/branches?pagelen=100&page=1`
                 });
@@ -2071,6 +2078,65 @@ describe('index', function () {
             return scm.getBranchList(branchListConfig).then(assert.fail, (err) => {
                 assert.equal(err, testError);
             });
+        });
+    });
+
+    describe('_getToken', () => {
+        beforeEach(() => {
+            const response = {
+                statusCode: 200,
+                body: JSON.stringify(testPayloadAccessToken)
+            };
+
+            requestMock.yieldsAsync(null, response, response.body);
+        });
+
+        it('request new token', (done) => {
+            // remove the token to allow the scm to try and load it
+            scm.token = '';
+            scm.refreshToken = '';
+            scm.expiresIn = 0;
+
+            // eslint-disable-next-line no-underscore-dangle
+            scm._getToken().then((newToken) => {
+                assert.calledWith(requestMock, {
+                    url: 'https://bitbucket.org/site/oauth2/access_token',
+                    method: 'POST',
+                    auth: {
+                        user: 'myclientid',
+                        pass: 'myclientsecret'
+                    },
+                    form: {
+                        grant_type: 'client_credentials'
+                    }
+                });
+                assert.equal(newToken, systemToken);
+                done();
+            }).catch(done);
+        });
+        it('refresh existing token', (done) => {
+            // mark the token expire to allow the scm to try and load it
+            scm.token = systemToken;
+            scm.refreshToken = 'myRefreshToken2';
+            scm.expiresIn = (new Date()).getTime() - (2700 * 1000);
+
+            // eslint-disable-next-line no-underscore-dangle
+            scm._getToken().then((newToken) => {
+                assert.calledWith(requestMock, {
+                    url: 'https://bitbucket.org/site/oauth2/access_token',
+                    method: 'POST',
+                    auth: {
+                        user: 'myclientid',
+                        pass: 'myclientsecret'
+                    },
+                    form: {
+                        graph_type: 'refresh_token',
+                        refresh_token: 'myRefreshToken2'
+                    }
+                });
+                assert.equal(newToken, systemToken);
+                done();
+            }).catch(done);
         });
     });
 });
