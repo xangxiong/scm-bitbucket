@@ -107,7 +107,7 @@ class BitbucketScm extends Scm {
         this.config = joi.attempt(config, joi.object().keys({
             username: joi.string().optional().default('sd-buildbot'),
             email: joi.string().optional().default('dev-null@screwdriver.cd'),
-            https: joi.boolean().optional().default(falses),
+            https: joi.boolean().optional().default(false),
             oauthClientId: joi.string().required(),
             oauthClientSecret: joi.string().required(),
             fusebox: joi.object().default({})
@@ -910,7 +910,7 @@ class BitbucketScm extends Scm {
      */
     async _findBranches(config) {
         const token = this._getToken();
-        
+
         const response = await this.breaker.runCommand({
             json: true,
             method: 'GET',
@@ -977,25 +977,25 @@ class BitbucketScm extends Scm {
         const params = {
             method: 'POST',
             auth: {
-                'user': this.config.oauthClientId,
-                'pass': this.config.oauthClientSecret
+                user: this.config.oauthClientId,
+                pass: this.config.oauthClientSecret
             },
             url: `https://${this.hostname}/site/oauth2/access_token`,
             form: {}
         };
 
         // we will have to request for a new token if one is not yet generated
-        if (this.token == '') {
+        if (this.token === '') {
             params.form = {
-                'grant_type': 'client_credentials'
+                grant_type: 'client_credentials'
             };
         } else {
             params.form = {
-                'graph_type': 'refresh_token',
-                'refresh_token': this.refreshToken
+                graph_type: 'refresh_token',
+                refresh_token: this.refreshToken
             };
         }
-        
+
         return this.breaker.runCommand(params).then((response) => {
             // we will have to parse the body since we are sending a normal FORM POST request
             const body = JSON.parse(response.body);
@@ -1007,7 +1007,7 @@ class BitbucketScm extends Scm {
             this.token = body.access_token;
             this.refreshToken = body.refresh_token;
             // convert the expires in to a microsecond timestamp from a # of seconds value
-            this.expiresIn = (new Date()).getTime() + body.expires_in * 1000;
+            this.expiresIn = (new Date()).getTime() + (body.expires_in * 1000);
         });
     }
 }
