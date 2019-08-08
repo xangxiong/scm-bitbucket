@@ -9,7 +9,6 @@ const joi = require('joi');
 const url = require('url');
 const request = require('request');
 const schema = require('screwdriver-data-schema');
-const API_URL_V1 = 'https://api.bitbucket.org/1.0';
 const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 const REPO_URL = `${API_URL_V2}/repositories`;
 const USER_URL = `${API_URL_V2}/users`;
@@ -520,7 +519,7 @@ class BitbucketScm extends Scm {
     _getFile(config) {
         const scm = getScmUriParts(config.scmUri);
         const branch = config.ref || scm.branch;
-        const fileUrl = `${API_URL_V1}/repositories/${scm.repoId}/src/${branch}/${config.path}`;
+        const fileUrl = `${API_URL_V2}/repositories/${scm.repoId}/src/${branch}/${config.path}`;
         const options = {
             url: fileUrl,
             method: 'GET',
@@ -537,7 +536,7 @@ class BitbucketScm extends Scm {
                         `STATUS CODE ${response.statusCode}: ${JSON.stringify(response.body)}`);
                 }
 
-                return response.body.data;
+                return response.body;
             });
     }
 

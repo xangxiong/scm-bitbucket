@@ -13,7 +13,6 @@ const testPayloadSync = require('./data/pr.sync.json');
 const testPayloadClose = require('./data/pr.closed.json');
 const testPayloadPush = require('./data/repo.push.json');
 const token = 'myAccessToken';
-const API_URL_V1 = 'https://api.bitbucket.org/1.0';
 const API_URL_V2 = 'https://api.bitbucket.org/2.0';
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -816,7 +815,7 @@ describe('index', function () {
     });
 
     describe('getFile', () => {
-        const apiUrl = `${API_URL_V1}/repositories/repoId/src/branchName/path/to/file.txt`;
+        const apiUrl = `${API_URL_V2}/repositories/repoId/src/branchName/path/to/file.txt`;
         const scmUri = 'hostName:repoId:branchName';
         const params = {
             scmUri,
@@ -836,12 +835,7 @@ describe('index', function () {
         beforeEach(() => {
             fakeResponse = {
                 statusCode: 200,
-                body: {
-                    node: 'nodeValue',
-                    path: 'path/to/file.txt',
-                    data: 'dataValue',
-                    size: 14
-                }
+                body: 'dataValue'
             };
             requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
         });
