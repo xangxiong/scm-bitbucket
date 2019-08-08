@@ -956,7 +956,7 @@ class BitbucketScm extends Scm {
      * @method _getToken
      * @return {Promise}
      */
-    _getToken() {
+    async _getToken() {
         // make sure our token is not yet expire. we will allow a 5s buffer in case there is a discrepency
         // in the time of our system and bitbucket or to account for in network time
         if (this.expiresIn < (new Date()).getTime() - 5000) {
