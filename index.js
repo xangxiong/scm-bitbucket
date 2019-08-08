@@ -107,7 +107,7 @@ class BitbucketScm extends Scm {
         this.config = joi.attempt(config, joi.object().keys({
             username: joi.string().optional().default('sd-buildbot'),
             email: joi.string().optional().default('dev-null@screwdriver.cd'),
-            https: joi.boolean().optional().default(false),
+            https: joi.boolean().optional().default(falses),
             oauthClientId: joi.string().required(),
             oauthClientSecret: joi.string().required(),
             fusebox: joi.object().default({})
@@ -118,6 +118,17 @@ class BitbucketScm extends Scm {
         // TODO: set fixed value temporarily.
         // need to change if the other bitbucket host is supported.
         this.hostname = 'bitbucket.org';
+
+        // TODO: find a better access token renewal process
+        // Tracks the generated authentication token/refresh-token in memory so that we can re-use authentication.
+        // Relying on the token passed in may result in using a token that expires.
+        // This token should only be use for READ API calls.  Any WRITE API calls should
+        // continue to use the token passed in regardless of whether it expires or not to ensure
+        // that all WRITE to Bitbucket is under the user that is initiating it.
+        // REF(1713) - Bitbucket tokens expires after 1-2 hours
+        this.token = '';
+        this.refreshToken = '';
+        this.expiresIn = 0;
     }
 
     /**
@@ -135,11 +146,13 @@ class BitbucketScm extends Scm {
      * @return {Promise}                   Resolves to a webhook information payload
      */
     _findWebhook(config) {
+        const token = this._getToken();
+
         return this.breaker.runCommand({
             json: true,
             method: 'GET',
             auth: {
-                bearer: config.token
+                bearer: token
             },
             url: `${API_URL_V2}/repositories/${config.repoId}/hooks?pagelen=30&page=${config.page}`
         }).then((response) => {
@@ -249,12 +262,13 @@ class BitbucketScm extends Scm {
         const repoInfo = getRepoInfo(config.checkoutUrl);
         const branchUrl =
             `${REPO_URL}/${repoInfo.username}/${repoInfo.repo}/refs/branches/${repoInfo.branch}`;
+        const token = this._getToken();
         const options = {
             url: branchUrl,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         };
 
@@ -350,12 +364,13 @@ class BitbucketScm extends Scm {
      * @return {Promise}                       Resolves to a decorated author with url, name, username, avatar
      */
     _decorateAuthor(config) {
+        const token = this._getToken();
         const options = {
             url: `${USER_URL}/${encodeURIComponent(config.username)}`,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         };
 
@@ -388,12 +403,13 @@ class BitbucketScm extends Scm {
      */
     _decorateUrl(config) {
         const scm = getScmUriParts(config.scmUri);
+        const token = this._getToken();
         const options = {
             url: `${REPO_URL}/${scm.repoId}`,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         };
 
@@ -425,12 +441,13 @@ class BitbucketScm extends Scm {
      */
     _decorateCommit(config) {
         const scm = getScmUriParts(config.scmUri);
+        const token = this._getToken();
         const options = {
             url: `${REPO_URL}/${scm.repoId}/commit/${config.sha}`,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         };
 
@@ -471,12 +488,13 @@ class BitbucketScm extends Scm {
         const scm = getScmUriParts(config.scmUri);
         const branchUrl =
             `${REPO_URL}/${scm.repoId}/refs/branches/${scm.branch}`;
+        const token = this._getToken();
         const options = {
             url: branchUrl,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         };
 
@@ -520,12 +538,13 @@ class BitbucketScm extends Scm {
         const scm = getScmUriParts(config.scmUri);
         const branch = config.ref || scm.branch;
         const fileUrl = `${API_URL_V2}/repositories/${scm.repoId}/src/${branch}/${config.path}`;
+        const token = this._getToken();
         const options = {
             url: fileUrl,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         };
 
@@ -551,6 +570,7 @@ class BitbucketScm extends Scm {
     async _getPermissions(config) {
         const scm = getScmUriParts(config.scmUri);
         const [owner, uuid] = scm.repoId.split('/');
+        const token = this._getToken();
 
         // First, check to see if the repository exists
         await this.breaker.runCommand({
@@ -558,7 +578,7 @@ class BitbucketScm extends Scm {
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         }).then(checkResponseError);
 
@@ -568,7 +588,7 @@ class BitbucketScm extends Scm {
                 method: 'GET',
                 json: true,
                 auth: {
-                    bearer: config.token
+                    bearer: token
                 }
             };
 
@@ -778,13 +798,14 @@ class BitbucketScm extends Scm {
      */
     _getOpenedPRs(config) {
         const repoId = getScmUriParts(config.scmUri).repoId;
+        const token = this._getToken();
 
         return this.breaker.runCommand({
             url: `${API_URL_V2}/repositories/${repoId}/pullrequests`,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         }).then((response) => {
             checkResponseError(response);
@@ -809,13 +830,14 @@ class BitbucketScm extends Scm {
      */
     _getPrInfo(config) {
         const repoId = getScmUriParts(config.scmUri).repoId;
+        const token = this._getToken();
 
         return this.breaker.runCommand({
             url: `${API_URL_V2}/repositories/${repoId}/pullrequests/${config.prNum}`,
             method: 'GET',
             json: true,
             auth: {
-                bearer: config.token
+                bearer: token
             }
         }).then((response) => {
             checkResponseError(response);
@@ -887,11 +909,13 @@ class BitbucketScm extends Scm {
      * @return {Promise}                        Resolves to a list of branches
      */
     async _findBranches(config) {
+        const token = this._getToken();
+        
         const response = await this.breaker.runCommand({
             json: true,
             method: 'GET',
             auth: {
-                bearer: config.token
+                bearer: token
             },
             url: `${API_URL_V2}/repositories/${config.repoId}`
                 + `/refs/branches?pagelen=${BRANCH_PAGE_SIZE}&page=${config.page}`
@@ -924,6 +948,66 @@ class BitbucketScm extends Scm {
             repoId: repoInfo.repoId,
             page: 1,
             token: config.token
+        });
+    }
+
+    /**
+     * Grab the current access token.  Ensures that if one is not yet available, a valid one is requested
+     * @method _getToken
+     * @return {Promise}
+     */
+    _getToken() {
+        // make sure our token is not yet expire. we will allow a 5s buffer in case there is a discrepency
+        // in the time of our system and bitbucket or to account for in network time
+        if (this.expiresIn < (new Date()).getTime() - 5000) {
+            // time to refresh the token to get a new token
+            await this._refreshToken();
+        }
+
+        return this.token;
+    }
+
+    /**
+     * Refresh the access token to avoid token expiration.  Bitbucket token only lasts for 1-2 hours.
+     * Will generate a new access token if one was not available yet
+     * @async _refreshToken
+     * @return {Promise}
+     */
+    async _refreshToken() {
+        const params = {
+            method: 'POST',
+            auth: {
+                'user': this.config.oauthClientId,
+                'pass': this.config.oauthClientSecret
+            },
+            url: `https://${this.hostname}/site/oauth2/access_token`,
+            form: {}
+        };
+
+        // we will have to request for a new token if one is not yet generated
+        if (this.token == '') {
+            params.form = {
+                'grant_type': 'client_credentials'
+            };
+        } else {
+            params.form = {
+                'graph_type': 'refresh_token',
+                'refresh_token': this.refreshToken
+            };
+        }
+        
+        return this.breaker.runCommand(params).then((response) => {
+            // we will have to parse the body since we are sending a normal FORM POST request
+            const body = JSON.parse(response.body);
+
+            if (response.statusCode !== 200) {
+                throw new Error(`STATUS CODE ${response.statusCode}: ${JSON.stringify(body)}`);
+            }
+
+            this.token = body.access_token;
+            this.refreshToken = body.refresh_token;
+            // convert the expires in to a microsecond timestamp from a # of seconds value
+            this.expiresIn = (new Date()).getTime() + body.expires_in * 1000;
         });
     }
 }
