@@ -1,0 +1,7 @@
+{
+    "access_token": "myAccessToken2", 
+    "scopes": "project:write snippet:write pullrequest:write webhook team:write wiki issue:write account:write pipeline:variable repository:admin", 
+    "expires_in": 7200, 
+    "refresh_token": "myRefreshToken2", 
+    "token_type": "bearer"
+}
