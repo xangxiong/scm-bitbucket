@@ -376,7 +376,18 @@ class BitbucketScm extends Scm {
         const response = await this.breaker.runCommand(options);
         const body = response.body;
 
-        if (response.statusCode !== 200) {
+        if (response.statusCode === 404 && !config.username.match(/^\{.*\}/)) {
+            // Bitbucket API has changed, cannot use strict username request anymore, for now we will
+            // have to return a simple generated decoration result to allow all builds to function.
+            // We will only allow this if the username is not a {uuid} pattern. Since if this is a {uuid}
+            // pattern, this likely is a valid 404.
+            return {
+                url: '',
+                name: config.username,
+                username: config.username,
+                avatar: ''
+            };
+        } else if (response.statusCode !== 200) {
             throw new Error(`STATUS CODE ${response.statusCode}: ${JSON.stringify(body)}`);
         }
 

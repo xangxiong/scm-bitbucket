@@ -438,7 +438,42 @@ describe('index', function () {
                 assert.deepEqual(decorated, expected);
             });
         });
+        it('resolves to a fabricated decorated author', () => {
+            fakeResponse = {
+                statusCode: 404,
+                body: {
+                    error: {
+                        message: 'Resource not found',
+                        detail: 'There is no API hosted at this URL'
+                    }
+                }
+            };
 
+            requestMock.yieldsAsync(null, fakeResponse, fakeResponse.body);
+
+            const expected = {
+                url: '',
+                name: 'batman',
+                username: 'batman',
+                avatar: ''
+            };
+            const expectedFabricatedOptions = {
+                url: `${API_URL_V2}/users/batman`,
+                method: 'GET',
+                json: true,
+                auth: {
+                    bearer: systemToken
+                }
+            };
+
+            return scm.decorateAuthor({
+                username: 'batman',
+                token
+            }).then((decorated) => {
+                assert.calledWith(requestMock, expectedFabricatedOptions);
+                assert.deepEqual(decorated, expected);
+            });
+        });
         it('rejects if status code is not 200', () => {
             fakeResponse = {
                 statusCode: 404,
