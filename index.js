@@ -132,6 +132,23 @@ class BitbucketScm extends Scm {
     }
 
     /**
+     * Get the webhook events mapping of screwdriver events and scm events
+     * @async _getWebhookEventsMapping
+     * @return {Object}     Returns a mapping of the events
+     */
+    async _getWebhookEventsMapping() {
+        return {
+            '~pr': [
+                'pullrequest:created',
+                'pullrequest:fulfilled',
+                'pullrequest:rejected',
+                'pullrequest:updated'
+            ],
+            '~commit': 'push'
+        };
+    }
+
+    /**
      * Look for a specific webhook that is attached to a repo.
      *
      * Searches through the webhook pages until the given webhook URL is found. If nothing is found, this will
@@ -185,6 +202,7 @@ class BitbucketScm extends Scm {
      * @param  {String}       config.repoId     Bitbucket repo ID (e.g., "username/repoSlug")
      * @param  {String}       config.token      Admin Oauth2 token for the repo
      * @param  {String}       config.url        url to create for webhook notifications
+     * @param  {String}       config.actions    Actions for the webhook events
      * @return {Promise}                        Resolves when complete
      */
     _createWebhook(config) {
@@ -193,13 +211,13 @@ class BitbucketScm extends Scm {
                 description: 'Screwdriver-CD build trigger',
                 url: config.url,
                 active: true,
-                events: [
+                events: config.actions.length === 0 ? [
                     'repo:push',
                     'pullrequest:created',
                     'pullrequest:fulfilled',
                     'pullrequest:rejected',
                     'pullrequest:updated'
-                ]
+                ] : config.actions
             },
             json: true,
             method: 'POST',
@@ -225,10 +243,11 @@ class BitbucketScm extends Scm {
      * is instead updated.
      * @method _addWebhook
      * @param  {Object}    config
-     * @param  {String}    config.scmUri    The SCM URI to add the webhook to
-     * @param  {String}    config.token     Oauth2 token to authenticate with Bitbucket
-      @param  {String}    config.webhookUrl The URL to use for the webhook notifications
-     * @return {Promise}                    Resolves upon success
+     * @param  {String}    config.scmUri     The SCM URI to add the webhook to
+     * @param  {String}    config.token      Oauth2 token to authenticate with Bitbucket
+     * @param  {String}    config.webhookUrl The URL to use for the webhook notifications
+     * @param  {String}    config.actions    Actions for the webhook events
+     * @return {Promise}                     Resolves upon success
      */
     _addWebhook(config) {
         const repoInfo = getScmUriParts(config.scmUri);
@@ -243,6 +262,7 @@ class BitbucketScm extends Scm {
                 this._createWebhook({
                     hookInfo,
                     repoId: repoInfo.repoId,
+                    actions: config.actions,
                     token: config.token,
                     url: config.webhookUrl
                 })
