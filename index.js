@@ -4,7 +4,7 @@
 
 const Fusebox = require('circuit-fuses').breaker;
 const Scm = require('screwdriver-scm-base');
-const hoek = require('hoek');
+const hoek = require('@hapi/hoek');
 const joi = require('joi');
 const url = require('url');
 const request = require('request');
@@ -70,7 +70,7 @@ function getRepoInfo(checkoutUrl) {
     return {
         hostname: matched[MATCH_COMPONENT_HOSTNAME],
         repo: matched[MATCH_COMPONENT_REPO],
-        branch: matched[MATCH_COMPONENT_BRANCH].slice(1),
+        branch: matched[MATCH_COMPONENT_BRANCH] ? matched[MATCH_COMPONENT_BRANCH].slice(1) : null,
         username: matched[MATCH_COMPONENT_USER]
     };
 }
@@ -132,6 +132,23 @@ class BitbucketScm extends Scm {
     }
 
     /**
+     * Get the webhook events mapping of screwdriver events and scm events
+     * @method _getWebhookEventsMapping
+     * @return {Object}     Returns a mapping of the events
+     */
+    _getWebhookEventsMapping() {
+        return {
+            pr: [
+                'pullrequest:created',
+                'pullrequest:fulfilled',
+                'pullrequest:rejected',
+                'pullrequest:updated'
+            ],
+            commit: 'push'
+        };
+    }
+
+    /**
      * Look for a specific webhook that is attached to a repo.
      *
      * Searches through the webhook pages until the given webhook URL is found. If nothing is found, this will
@@ -185,6 +202,7 @@ class BitbucketScm extends Scm {
      * @param  {String}       config.repoId     Bitbucket repo ID (e.g., "username/repoSlug")
      * @param  {String}       config.token      Admin Oauth2 token for the repo
      * @param  {String}       config.url        url to create for webhook notifications
+     * @param  {String}       config.actions    Actions for the webhook events
      * @return {Promise}                        Resolves when complete
      */
     _createWebhook(config) {
@@ -193,13 +211,13 @@ class BitbucketScm extends Scm {
                 description: 'Screwdriver-CD build trigger',
                 url: config.url,
                 active: true,
-                events: [
+                events: config.actions.length === 0 ? [
                     'repo:push',
                     'pullrequest:created',
                     'pullrequest:fulfilled',
                     'pullrequest:rejected',
                     'pullrequest:updated'
-                ]
+                ] : config.actions
             },
             json: true,
             method: 'POST',
@@ -225,10 +243,11 @@ class BitbucketScm extends Scm {
      * is instead updated.
      * @method _addWebhook
      * @param  {Object}    config
-     * @param  {String}    config.scmUri    The SCM URI to add the webhook to
-     * @param  {String}    config.token     Oauth2 token to authenticate with Bitbucket
-      @param  {String}    config.webhookUrl The URL to use for the webhook notifications
-     * @return {Promise}                    Resolves upon success
+     * @param  {String}    config.scmUri     The SCM URI to add the webhook to
+     * @param  {String}    config.token      Oauth2 token to authenticate with Bitbucket
+     * @param  {String}    config.webhookUrl The URL to use for the webhook notifications
+     * @param  {String}    config.actions    Actions for the webhook events
+     * @return {Promise}                     Resolves upon success
      */
     _addWebhook(config) {
         const repoInfo = getScmUriParts(config.scmUri);
@@ -243,6 +262,7 @@ class BitbucketScm extends Scm {
                 this._createWebhook({
                     hookInfo,
                     repoId: repoInfo.repoId,
+                    actions: config.actions,
                     token: config.token,
                     url: config.webhookUrl
                 })
@@ -259,8 +279,11 @@ class BitbucketScm extends Scm {
      */
     async _parseUrl(config) {
         const repoInfo = getRepoInfo(config.checkoutUrl);
+        // TODO: add logic to fetch default branch
+        // See https://jira.atlassian.com/browse/BCLOUD-20212
+        const branch = repoInfo.branch || 'master';
         const branchUrl =
-            `${REPO_URL}/${repoInfo.username}/${repoInfo.repo}/refs/branches/${repoInfo.branch}`;
+            `${REPO_URL}/${repoInfo.username}/${repoInfo.repo}/refs/branches/${branch}`;
         const token = await this._getToken();
 
         const options = {
@@ -288,7 +311,7 @@ class BitbucketScm extends Scm {
         }
 
         return `${repoInfo.hostname}:${repoInfo.username}` +
-            `/${response.body.target.repository.uuid}:${repoInfo.branch}`;
+            `/${response.body.target.repository.uuid}:${branch}`;
     }
 
     /**
@@ -737,14 +760,14 @@ class BitbucketScm extends Scm {
             command.push(`export SD_CONFIG_DIR=${externalConfigDir}`);
 
             // Git clone
-            command.push(`echo Cloning external config repo ${parentCheckoutUrl}`);
+            command.push(`echo 'Cloning external config repo ${parentCheckoutUrl}'`);
             command.push('if [ ! -z $GIT_SHALLOW_CLONE ] && [ $GIT_SHALLOW_CLONE = false ]; '
                   + `then ${gitWrapper} `
-                  + `"git clone --recursive --quiet --progress --branch ${parentBranch} `
+                  + `"git clone --recursive --quiet --progress --branch '${parentBranch}' `
                   + '$CONFIG_URL $SD_CONFIG_DIR"; '
                   + `else ${gitWrapper} `
                   + '"git clone --depth=50 --no-single-branch --recursive --quiet --progress '
-                  + `--branch ${parentBranch} $CONFIG_URL $SD_CONFIG_DIR"; fi`);
+                  + `--branch '${parentBranch}' $CONFIG_URL $SD_CONFIG_DIR"; fi`);
 
             // Reset to SHA
             command.push(`${gitWrapper} "git -C $SD_CONFIG_DIR reset --hard `
@@ -753,7 +776,7 @@ class BitbucketScm extends Scm {
         }
 
         // Git clone
-        command.push(`echo Cloning ${checkoutUrl}, on branch ${branch}`);
+        command.push(`echo 'Cloning ${checkoutUrl}, on branch ${branch}'`);
         command.push('if [ ! -z $SCM_CLONE_TYPE ] && [ $SCM_CLONE_TYPE = ssh ]; ' +
             `then export SCM_URL=${sshCheckoutUrl}; ` +
             'elif [ ! -z $SCM_USERNAME ] && [ ! -z $SCM_ACCESS_TOKEN ]; ' +
@@ -762,14 +785,14 @@ class BitbucketScm extends Scm {
         );
         command.push('if [ ! -z $GIT_SHALLOW_CLONE ] && [ $GIT_SHALLOW_CLONE = false ]; '
               + `then ${gitWrapper} `
-              + `"git clone --recursive --quiet --progress --branch ${branch} `
+              + `"git clone --recursive --quiet --progress --branch '${branch}' `
               + '$SCM_URL $SD_SOURCE_DIR"; '
               + `else ${gitWrapper} `
               + '"git clone --depth=50 --no-single-branch --recursive --quiet --progress '
-              + `--branch ${branch} $SCM_URL $SD_SOURCE_DIR"; fi`);
+              + `--branch '${branch}' $SCM_URL $SD_SOURCE_DIR"; fi`);
         // Reset to Sha
-        command.push(`echo Reset to SHA ${checkoutRef}`);
-        command.push(`${gitWrapper} "git reset --hard ${checkoutRef}"`);
+        command.push(`echo 'Reset to SHA ${checkoutRef}'`);
+        command.push(`${gitWrapper} "git reset --hard '${checkoutRef}'"`);
 
         // Set config
         command.push('echo Setting user name and user email');
@@ -779,7 +802,7 @@ class BitbucketScm extends Scm {
         if (config.prRef) {
             const prRef = config.prRef.replace('merge', 'head:pr');
 
-            command.push(`echo Fetching PR and merging with ${branch}`);
+            command.push(`echo 'Fetching PR and merging with ${branch}'`);
             command.push(`${gitWrapper} "git fetch origin ${prRef}"`);
             command.push(`${gitWrapper} "git merge --no-edit ${config.sha}"`);
             // Init & Update submodule
